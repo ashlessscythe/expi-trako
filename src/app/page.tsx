@@ -127,6 +127,47 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Help & Resources Section */}
+        <div className="bg-background py-16 sm:py-24">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                Help & Resources
+              </h2>
+              <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
+                Get started quickly with our comprehensive guides and FAQs
+              </p>
+            </div>
+            <div className="mx-auto mt-16 max-w-7xl sm:mt-20">
+              <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2">
+                <Link href="/guide" className="group">
+                  <div className="relative flex flex-col gap-6 border rounded-lg p-8 hover:border-primary transition-colors duration-200">
+                    <h3 className="text-xl font-semibold leading-7 text-foreground group-hover:text-primary transition-colors duration-200">
+                      User Guide
+                    </h3>
+                    <p className="text-base leading-7 text-muted-foreground">
+                      Step-by-step instructions on how to use ExpiTrako
+                      effectively. Learn about creating requests, managing
+                      workflows, and using advanced features.
+                    </p>
+                  </div>
+                </Link>
+                <Link href="/faq" className="group">
+                  <div className="relative flex flex-col gap-6 border rounded-lg p-8 hover:border-primary transition-colors duration-200">
+                    <h3 className="text-xl font-semibold leading-7 text-foreground group-hover:text-primary transition-colors duration-200">
+                      FAQ
+                    </h3>
+                    <p className="text-base leading-7 text-muted-foreground">
+                      Find answers to commonly asked questions about account
+                      management, data security, and using ExpiTrako's features.
+                    </p>
+                  </div>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* About Section */}
         <div className="bg-background py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
