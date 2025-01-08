@@ -62,17 +62,29 @@ export default function GuidePage() {
             <div className="space-y-4">
               <section>
                 <h3 className="text-xl font-medium mb-2">Bulk Upload</h3>
-                <p>For multiple requests, use our bulk upload feature:</p>
+                <p>For multiple requests, you have two options:</p>
                 <ul className="list-disc list-inside ml-4 mt-2">
-                  <li>Navigate to the Bulk Upload section</li>
-                  <li>Download the template CSV file</li>
-                  <li>Fill in your requests</li>
-                  <li>Upload the completed file</li>
+                  <li>
+                    <strong>Recommended:</strong> Copy and paste your Excel data
+                    into the Paste Data section, and the system will
+                    automatically create the requests for you.
+                  </li>
+                  <li>
+                    Alternatively, use the CSV upload method:
+                    <ul className="list-disc list-inside ml-6">
+                      <li>Navigate to the Bulk Upload section</li>
+                      <li>Download the template CSV file</li>
+                      <li>Fill in your requests</li>
+                      <li>Upload the completed file</li>
+                    </ul>
+                  </li>
                 </ul>
               </section>
 
               <section>
-                <h3 className="text-xl font-medium mb-2">Reports</h3>
+                <h3 className="text-xl font-medium mb-2">
+                  Reports (Admin only)
+                </h3>
                 <p>
                   Generate detailed reports to track and analyze your requests:
                 </p>

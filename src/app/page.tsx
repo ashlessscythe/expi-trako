@@ -146,7 +146,7 @@ export default function Home() {
                       User Guide
                     </h3>
                     <p className="text-base leading-7 text-muted-foreground">
-                      Step-by-step instructions on how to use ExpiTrako
+                      Step-by-step instructions on how to use {APP_NAME}{" "}
                       effectively. Learn about creating requests, managing
                       workflows, and using advanced features.
                     </p>
@@ -159,7 +159,8 @@ export default function Home() {
                     </h3>
                     <p className="text-base leading-7 text-muted-foreground">
                       Find answers to commonly asked questions about account
-                      management, data security, and using ExpiTrako's features.
+                      management, data security, and using {APP_NAME}'s
+                      features.
                     </p>
                   </div>
                 </Link>
