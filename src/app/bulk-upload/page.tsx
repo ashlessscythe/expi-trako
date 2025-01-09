@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, Download } from "lucide-react";
 
 interface ProcessResult {
   success: boolean;
@@ -108,28 +109,35 @@ export default function BulkUploadPage() {
   return (
     <div>
       <Header />
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">
-          Bulk Upload Must Go Requests
-        </h1>
+      <div className="container mx-auto p-4 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Bulk Upload Must Go Requests</h1>
+          <Link
+            href="/templates/bulk-upload-template.csv"
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
+          >
+            <Download className="w-4 h-4" />
+            Download Template
+          </Link>
+        </div>
 
         {error && (
-          <div className="mb-4 p-4 text-red-700 bg-red-50 rounded-md">
+          <div className="p-4 text-red-700 bg-red-50 rounded-md border border-red-200">
             {error}
           </div>
         )}
 
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-2">Split Criteria</h2>
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">Split Criteria</h2>
           <div className="max-w-xs">
             <Select
               value={splitCriteria}
               onValueChange={(value: SplitCriteria) => setSplitCriteria(value)}
             >
-              <SelectTrigger className="text-foreground bg-background border border-border rounded-md shadow-lg">
+              <SelectTrigger>
                 <SelectValue placeholder="Select split criteria" />
               </SelectTrigger>
-              <SelectContent className="text-foreground bg-background border border-border rounded-md shadow-lg">
+              <SelectContent>
                 <SelectItem value="shipment">
                   Split by Shipment Number
                 </SelectItem>
@@ -140,73 +148,103 @@ export default function BulkUploadPage() {
                 <SelectItem value="part">Split by Part Number</SelectItem>
               </SelectContent>
             </Select>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-muted-foreground">
               Choose how to group the data into separate Must Go requests.
             </p>
           </div>
-        </div>
+        </Card>
 
-        <div className="grid gap-4">
-          <Card className="p-4">
-            <h2 className="text-xl font-semibold mb-2">
-              Upload Excel/CSV File
-            </h2>
-            <form onSubmit={(e) => handleSubmit(e, "file")}>
-              <div className="mb-4">
-                <input
-                  type="file"
-                  name="file"
-                  accept=".xlsx,.xls,.csv"
-                  className="block w-full text-sm text-gray-500
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-md file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-blue-50 file:text-blue-700
-                    hover:file:bg-blue-100"
-                />
-              </div>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Processing..." : "Upload File"}
-              </Button>
-            </form>
-          </Card>
-
-          <Card className="p-4">
-            <h2 className="text-xl font-semibold mb-2">Paste Data</h2>
-            <form onSubmit={(e) => handleSubmit(e, "text")}>
-              <div className="mb-4">
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card className="p-6 flex flex-col h-[350px]">
+            <h2 className="text-lg font-semibold mb-4">Paste Data</h2>
+            <form
+              onSubmit={(e) => handleSubmit(e, "text")}
+              className="flex flex-col flex-1"
+            >
+              <div className="flex-1">
                 <Textarea
                   name="text"
                   placeholder="Paste your data here..."
-                  className="min-h-[200px]"
+                  className="h-full resize-none"
                 />
               </div>
-              <Button type="submit" disabled={isLoading}>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full mt-auto"
+              >
                 {isLoading ? "Processing..." : "Process Text"}
               </Button>
             </form>
           </Card>
+
+          <Card className="p-6 flex flex-col h-[350px]">
+            <h2 className="text-lg font-semibold mb-4">
+              Upload Excel/CSV File
+            </h2>
+            <form
+              onSubmit={(e) => handleSubmit(e, "file")}
+              className="flex flex-col flex-1"
+            >
+              <div className="flex-1">
+                <div className="border-2 border-dashed border-gray-200 rounded-lg p-4">
+                  <input
+                    type="file"
+                    name="file"
+                    accept=".xlsx,.xls,.csv"
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100"
+                  />
+                </div>
+              </div>
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full mt-auto"
+              >
+                {isLoading ? "Processing..." : "Upload File"}
+              </Button>
+            </form>
+          </Card>
         </div>
 
-        <div className="mt-4 text-sm text-gray-600">
-          <h3 className="font-semibold mb-2">Expected Format:</h3>
-          <p>
-            For Excel/CSV files or pasted text, please ensure the following
-            columns are present:
-          </p>
-          <ul className="list-disc list-inside mt-2">
-            <li>SHIPMENT (required)</li>
-            <li>PLANT</li>
-            <li>DELPHI P/N (required)</li>
-            <li>MG QTY (required)</li>
-            <li>INSTRUCTIONS (for route information)</li>
-            <li>1ST truck # or 2ND truck # (for trailer number)</li>
-          </ul>
-          <p className="mt-2 text-blue-600">
-            Note: The INSTRUCTIONS column will be used to store route
-            information for each shipment.
-          </p>
-        </div>
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold mb-4">Required Format</h2>
+          <div className="space-y-4">
+            <div className="text-sm text-muted-foreground">
+              <p>
+                For Excel/CSV files or pasted text, ensure the following columns
+                are present:
+              </p>
+              <p className="mt-1">
+                <i>(You will be able to edit after creating, so no worries!)</i>
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <h3 className="font-medium mb-2">Required Fields:</h3>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>SHIPMENT</li>
+                  <li>DELPHI P/N</li>
+                  <li>MG QTY</li>
+                  <li>1ST truck #</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-medium mb-2">Optional Fields:</h3>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>PLANT</li>
+                  <li>INSTRUCTIONS (for route information)</li>
+                  <li>2ND truck # (for trailer number)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </Card>
 
         <Dialog open={showResultModal} onOpenChange={setShowResultModal}>
           <DialogContent>

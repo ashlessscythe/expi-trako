@@ -24,6 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 
 interface RequestCreator {
   id: string;
@@ -270,6 +277,79 @@ export default function RequestList({
     return sortDirection === "asc" ? "↑" : "↓";
   };
 
+  const renderMobileCard = (request: Request) => (
+    <Card key={request.id} className="mb-4">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <Link
+            href={`/requests/${request.id}`}
+            className="text-blue-500 hover:underline"
+          >
+            <CardTitle>{request.shipmentNumber}</CardTitle>
+          </Link>
+          <Badge className={getStatusBadgeColor(request.status)}>
+            {request.status.replace("_", " ")}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2 text-sm">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <span className="font-medium">Plant:</span>
+            <div>{request.plant || "-"}</div>
+          </div>
+          <div>
+            <span className="font-medium">Pallet Count:</span>
+            <div>{request.palletCount}</div>
+          </div>
+        </div>
+        <div>
+          <span className="font-medium">Route Info:</span>
+          <div>{request.routeInfo || "-"}</div>
+        </div>
+        <div>
+          <span className="font-medium">Created By:</span>
+          <div>
+            {request.creator.name}
+            <span className="text-muted-foreground">
+              {" "}
+              ({request.creator.role})
+            </span>
+          </div>
+        </div>
+        <div>
+          <span className="font-medium">Created At:</span>
+          <div>{new Date(request.createdAt).toLocaleString()}</div>
+        </div>
+      </CardContent>
+      {showActions && user?.role === "ADMIN" && (
+        <CardFooter>
+          {request.deleted ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleUndelete(request.id)}
+              disabled={deleting === request.id}
+              className="w-full"
+            >
+              {deleting === request.id ? "Restoring..." : "Restore"}
+            </Button>
+          ) : (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleDelete(request.id)}
+              disabled={deleting === request.id}
+              className="w-full"
+            >
+              {deleting === request.id ? "Deleting..." : "Delete"}
+            </Button>
+          )}
+        </CardFooter>
+      )}
+    </Card>
+  );
+
   return (
     <div className="space-y-4">
       <div className="space-y-4">
@@ -311,7 +391,7 @@ export default function RequestList({
               ))}
             </SelectContent>
           </Select>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               type="date"
               value={dateRange.start}
@@ -342,107 +422,117 @@ export default function RequestList({
           No requests found
         </div>
       ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead
-                  onClick={() => handleSort("shipmentNumber")}
-                  className="cursor-pointer"
-                >
-                  Shipment Number {getSortIcon("shipmentNumber")}
-                </TableHead>
-                <TableHead
-                  onClick={() => handleSort("plant")}
-                  className="cursor-pointer"
-                >
-                  Plant {getSortIcon("plant")}
-                </TableHead>
-                <TableHead>Route Info</TableHead>
-                <TableHead
-                  onClick={() => handleSort("palletCount")}
-                  className="cursor-pointer"
-                >
-                  Pallet Count {getSortIcon("palletCount")}
-                </TableHead>
-                <TableHead
-                  onClick={() => handleSort("status")}
-                  className="cursor-pointer"
-                >
-                  Status {getSortIcon("status")}
-                </TableHead>
-                <TableHead>Created By</TableHead>
-                <TableHead
-                  onClick={() => handleSort("createdAt")}
-                  className="cursor-pointer"
-                >
-                  Created At {getSortIcon("createdAt")}
-                </TableHead>
-                {showActions && user?.role === "ADMIN" && (
-                  <TableHead>Actions</TableHead>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAndSortedRequests.map((request) => (
-                <TableRow
-                  key={request.id}
-                  className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors duration-150"
-                >
-                  <TableCell>
-                    <Link
-                      href={`/requests/${request.id}`}
-                      className="text-blue-500 hover:underline"
-                    >
-                      {request.shipmentNumber}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{request.plant || "-"}</TableCell>
-                  <TableCell>{request.routeInfo || "-"}</TableCell>
-                  <TableCell>{request.palletCount}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusBadgeColor(request.status)}>
-                      {request.status.replace("_", " ")}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {request.creator.name}
-                    <br />
-                    <span className="text-sm text-muted-foreground">
-                      {request.creator.role}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(request.createdAt).toLocaleString()}
-                  </TableCell>
+        <>
+          {/* Mobile View (Cards) */}
+          <div className="md:hidden space-y-4">
+            {filteredAndSortedRequests.map(renderMobileCard)}
+          </div>
+
+          {/* Desktop View (Table) */}
+          <div className="hidden md:block rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead
+                    onClick={() => handleSort("shipmentNumber")}
+                    className="cursor-pointer"
+                  >
+                    Shipment Number {getSortIcon("shipmentNumber")}
+                  </TableHead>
+                  <TableHead
+                    onClick={() => handleSort("plant")}
+                    className="cursor-pointer"
+                  >
+                    Plant {getSortIcon("plant")}
+                  </TableHead>
+                  <TableHead>Route Info</TableHead>
+                  <TableHead
+                    onClick={() => handleSort("palletCount")}
+                    className="cursor-pointer"
+                  >
+                    Pallet Count {getSortIcon("palletCount")}
+                  </TableHead>
+                  <TableHead
+                    onClick={() => handleSort("status")}
+                    className="cursor-pointer"
+                  >
+                    Status {getSortIcon("status")}
+                  </TableHead>
+                  <TableHead>Created By</TableHead>
+                  <TableHead
+                    onClick={() => handleSort("createdAt")}
+                    className="cursor-pointer"
+                  >
+                    Created At {getSortIcon("createdAt")}
+                  </TableHead>
                   {showActions && user?.role === "ADMIN" && (
-                    <TableCell>
-                      {request.deleted ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUndelete(request.id)}
-                          disabled={deleting === request.id}
-                        >
-                          {deleting === request.id ? "Restoring..." : "Restore"}
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(request.id)}
-                          disabled={deleting === request.id}
-                        >
-                          {deleting === request.id ? "Deleting..." : "Delete"}
-                        </Button>
-                      )}
-                    </TableCell>
+                    <TableHead>Actions</TableHead>
                   )}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {filteredAndSortedRequests.map((request) => (
+                  <TableRow
+                    key={request.id}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors duration-150"
+                  >
+                    <TableCell>
+                      <Link
+                        href={`/requests/${request.id}`}
+                        className="text-blue-500 hover:underline"
+                      >
+                        {request.shipmentNumber}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{request.plant || "-"}</TableCell>
+                    <TableCell>{request.routeInfo || "-"}</TableCell>
+                    <TableCell>{request.palletCount}</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusBadgeColor(request.status)}>
+                        {request.status.replace("_", " ")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {request.creator.name}
+                      <br />
+                      <span className="text-sm text-muted-foreground">
+                        {request.creator.role}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(request.createdAt).toLocaleString()}
+                    </TableCell>
+                    {showActions && user?.role === "ADMIN" && (
+                      <TableCell>
+                        {request.deleted ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleUndelete(request.id)}
+                            disabled={deleting === request.id}
+                          >
+                            {deleting === request.id
+                              ? "Restoring..."
+                              : "Restore"}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(request.id)}
+                            disabled={deleting === request.id}
+                          >
+                            {deleting === request.id ? "Deleting..." : "Delete"}
+                          </Button>
+                        )}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       )}
     </div>
   );
