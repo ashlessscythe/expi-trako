@@ -1,15 +1,56 @@
-# MG-Tracko: Expedite Material Request Tracker
+# Expi-Trak: Expedite Material Request Tracker
 
 A web application for tracking and managing "must-go" and expedite material requests, facilitating communication between customer service and warehouse teams.
 
+![Landing Page](public/landing.png)
+
 ## Features
 
-- Real-time queue updates for expedite requests
+### Core Functionality
+
+- **Real-time Tracking**: Monitor expedite requests in real-time with instant status updates
+- **Analytics Dashboard**: Comprehensive analytics to track performance and identify trends
+- **Team Collaboration**: Seamless communication between customer service and warehouse teams
+- **Efficient Processing**: Streamlined workflow for faster must-go shipment processing
+
+### Key Features
+
 - Role-based access control (Admin, Customer Service, Warehouse)
 - Comprehensive request tracking with status updates
 - Part information management
 - Responsive design for all devices
 - Dark/Light theme support
+
+### User Interface
+
+![Request List](public/list.png)
+_Request management interface for easy tracking and updates_
+
+![Analytics Dashboard](public/dashboard.png)
+_Comprehensive dashboard for performance monitoring_
+
+## User Roles
+
+### Customer Service Team
+
+- Submit and track expedite requests with ease
+- Get real-time updates on shipment status
+- Maintain clear communication with warehouse team
+- Access comprehensive request history
+
+### Warehouse Staff
+
+- Access clear queue of prioritized requests
+- Mark items as processed in real-time
+- Maintain efficient workflow
+- Stay organized with intuitive interface
+
+### Administrators
+
+- Manage user access and permissions
+- Monitor system performance
+- Generate reports and analytics
+- Configure system settings
 
 ## Tech Stack
 
