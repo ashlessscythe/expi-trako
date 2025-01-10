@@ -104,7 +104,7 @@ export default function Home() {
                 {features.map(({ name, description, icon: Icon }) => (
                   <div
                     key={name}
-                    className="relative flex flex-col gap-6 border rounded-lg p-6"
+                    className="relative flex flex-col gap-6 border rounded-lg p-6 transform transition-transform duration-300 hover:scale-105"
                   >
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                       <Icon
@@ -141,7 +141,7 @@ export default function Home() {
             <div className="mx-auto mt-16 max-w-7xl sm:mt-20">
               <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2">
                 <Link href="/guide" className="group">
-                  <div className="relative flex flex-col gap-6 border rounded-lg p-8 hover:border-primary transition-colors duration-200">
+                  <div className="relative flex flex-col gap-6 border rounded-lg p-8 hover:border-primary transition-colors duration-200 transform transition-transform duration-300 hover:scale-105">
                     <h3 className="text-xl font-semibold leading-7 text-foreground group-hover:text-primary transition-colors duration-200">
                       User Guide
                     </h3>
@@ -153,7 +153,7 @@ export default function Home() {
                   </div>
                 </Link>
                 <Link href="/faq" className="group">
-                  <div className="relative flex flex-col gap-6 border rounded-lg p-8 hover:border-primary transition-colors duration-200">
+                  <div className="relative flex flex-col gap-6 border rounded-lg p-8 hover:border-primary transition-colors duration-200 transform transition-transform duration-300 hover:scale-105">
                     <h3 className="text-xl font-semibold leading-7 text-foreground group-hover:text-primary transition-colors duration-200">
                       FAQ
                     </h3>
@@ -184,7 +184,7 @@ export default function Home() {
             </div>
             <div className="mx-auto mt-16 max-w-7xl sm:mt-20">
               <div className="grid gap-x-8 gap-y-10 sm:grid-cols-2">
-                <div className="relative flex flex-col gap-6 border rounded-lg p-8">
+                <div className="relative flex flex-col gap-6 border rounded-lg p-8 hover:border-primary transition-colors duration-200 transform transition-transform duration-300 hover:scale-105">
                   <h3 className="text-xl font-semibold leading-7 text-foreground">
                     For Customer Service
                   </h3>
@@ -194,7 +194,7 @@ export default function Home() {
                     with the warehouse team.
                   </p>
                 </div>
-                <div className="relative flex flex-col gap-6 border rounded-lg p-8">
+                <div className="relative flex flex-col gap-6 border rounded-lg p-8 hover:border-primary transition-colors duration-200 transform transition-transform duration-300 hover:scale-105">
                   <h3 className="text-xl font-semibold leading-7 text-foreground">
                     For Warehouse Staff
                   </h3>
