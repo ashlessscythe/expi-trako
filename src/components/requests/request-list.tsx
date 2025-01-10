@@ -172,6 +172,52 @@ export default function RequestList({
     setDateRange({ start: "", end: "" });
   };
 
+  const downloadAsCSV = () => {
+    // Convert filtered requests to CSV format
+    const headers = [
+      "Shipment Number",
+      "Plant",
+      "Route Info",
+      "Pallet Count",
+      "Status",
+      "Created By",
+      "Creator Role",
+      "Created At",
+    ];
+
+    const csvData = filteredAndSortedRequests.map((request) => [
+      request.shipmentNumber,
+      request.plant || "",
+      request.routeInfo || "",
+      request.palletCount.toString(),
+      request.status,
+      request.creator.name,
+      request.creator.role,
+      new Date(request.createdAt).toLocaleString(),
+    ]);
+
+    // Add headers as first row
+    csvData.unshift(headers);
+
+    // Convert to CSV string
+    const csvString = csvData
+      .map((row) => row.map((cell) => `"${cell}"`).join(","))
+      .join("\n");
+
+    // Create and trigger download
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `requests-${new Date().toISOString().split("T")[0]}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -410,10 +456,19 @@ export default function RequestList({
             />
           </div>
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={clearFilters} className="text-sm">
             Clear Filters
           </Button>
+          {(user?.role === "ADMIN" || user?.role === "REPORT_RUNNER") && (
+            <Button
+              variant="outline"
+              onClick={downloadAsCSV}
+              className="text-sm"
+            >
+              Download CSV
+            </Button>
+          )}
         </div>
       </div>
 
