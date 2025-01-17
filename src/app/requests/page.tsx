@@ -61,12 +61,32 @@ async function getRequests(userId: string, role: string) {
     },
   });
 
-  // Format dates to strings
+  // Format all dates to ISO strings and ensure all fields are present
   return requests.map((request) => ({
     ...request,
     createdAt: request.createdAt.toISOString(),
     updatedAt: request.updatedAt.toISOString(),
     deletedAt: request.deletedAt?.toISOString() || null,
+    additionalNotes: request.additionalNotes || null,
+    notes: request.notes || [],
+    trailers: request.trailers.map((trailer) => ({
+      ...trailer,
+      createdAt: trailer.createdAt.toISOString(),
+      trailer: {
+        ...trailer.trailer,
+        createdAt: trailer.trailer.createdAt.toISOString(),
+        updatedAt: trailer.trailer.updatedAt.toISOString(),
+      },
+    })),
+    partDetails: request.partDetails.map((detail) => ({
+      ...detail,
+      createdAt: detail.createdAt.toISOString(),
+      updatedAt: detail.updatedAt.toISOString(),
+    })),
+    logs: request.logs.map((log) => ({
+      ...log,
+      timestamp: log.timestamp.toISOString(),
+    })),
   }));
 }
 
@@ -77,9 +97,7 @@ export default async function RequestsPage() {
     redirect("/api/auth/signin");
   }
 
-  console.log("User role:", session.user.role); // Debug log
   const requests = await getRequests(session.user.id, session.user.role);
-  console.log("Found requests:", requests.length); // Debug log
 
   return (
     <>

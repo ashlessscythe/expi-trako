@@ -66,10 +66,10 @@ export const authOptions: NextAuthOptions = {
       }
 
       // Debug session construction
-      console.log("Session construction:", {
-        token,
-        sessionUser: session.user,
-      });
+      // console.log("Session construction:", {
+      //   token,
+      //   sessionUser: session.user,
+      // });
 
       return session;
     },

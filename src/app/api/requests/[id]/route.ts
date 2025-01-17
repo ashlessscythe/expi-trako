@@ -18,10 +18,23 @@ interface Part {
 
 interface TrailerWithParts {
   trailerNumber: string;
+  isTransload: boolean;
   parts: Part[];
 }
 
-type DbPartDetail = Omit<PartDetail, "createdAt" | "updatedAt"> & {
+type DbPartDetail = {
+  id: string;
+  partNumber: string;
+  quantity: number;
+  requestId: string;
+  trailerId: string;
+  trailer: {
+    id: string;
+    trailerNumber: string;
+    isTransload: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 };
@@ -385,9 +398,26 @@ export async function PATCH(
     // Compare parts and log changes
     const partChanges: string[] = [];
 
-    // Log trailer number changes first
+    // Log trailer number and transload changes first
     trailerMap.forEach((newNum, oldNum) => {
       partChanges.push(`moved parts from trailer ${oldNum} to ${newNum}`);
+    });
+
+    // Log transload status changes
+    trailers.forEach((trailer) => {
+      const existingTrailer = request.trailers.find(
+        (t) => t.trailer.trailerNumber === trailer.trailerNumber
+      );
+      if (
+        existingTrailer &&
+        existingTrailer.trailer.isTransload !== trailer.isTransload
+      ) {
+        changes.push(
+          `transload status for trailer ${trailer.trailerNumber} from ${
+            existingTrailer.trailer.isTransload ? "yes" : "no"
+          } to ${trailer.isTransload ? "yes" : "no"}`
+        );
+      }
     });
 
     // Then log part changes
@@ -468,8 +498,13 @@ export async function PATCH(
       for (const trailerData of trailers) {
         const trailer = await tx.trailer.upsert({
           where: { trailerNumber: trailerData.trailerNumber },
-          create: { trailerNumber: trailerData.trailerNumber },
-          update: {},
+          create: {
+            trailerNumber: trailerData.trailerNumber,
+            isTransload: trailerData.isTransload || false,
+          },
+          update: {
+            isTransload: trailerData.isTransload || false,
+          },
         });
 
         await tx.requestTrailer.create({

@@ -21,6 +21,7 @@ export interface PartDetail {
   trailer: {
     id: string;
     trailerNumber: string;
+    isTransload: boolean;
   };
   createdAt: string;
   updatedAt: string;
@@ -40,6 +41,7 @@ export interface RequestTrailer {
   trailerId: string;
   trailer: Trailer;
   createdAt: string;
+  isTransload: boolean;
 }
 
 export interface RequestCreator {
@@ -77,16 +79,21 @@ export interface RequestLog {
   };
 }
 
+export interface FormPart {
+  partNumber: string;
+  quantity: number;
+}
+
+export interface FormTrailer {
+  trailerNumber: string;
+  isTransload: boolean;
+  parts: FormPart[];
+}
+
 export interface FormData {
   shipmentNumber: string;
   plant?: string | null;
-  trailers: Array<{
-    trailerNumber: string;
-    parts: Array<{
-      partNumber: string;
-      quantity: number;
-    }>;
-  }>;
+  trailers: FormTrailer[];
   palletCount: number;
   routeInfo?: string | null;
   additionalNotes?: string | null;

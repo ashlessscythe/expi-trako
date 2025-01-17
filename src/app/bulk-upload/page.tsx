@@ -57,6 +57,7 @@ export default function BulkUploadPage() {
 
     const formData = new FormData(event.currentTarget);
     formData.append("splitCriteria", splitCriteria);
+    formData.append("type", type);
 
     try {
       const response = await fetch("/api/bulk-upload", {

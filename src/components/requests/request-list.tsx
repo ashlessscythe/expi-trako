@@ -43,11 +43,46 @@ interface Request {
   shipmentNumber: string;
   plant: string | null;
   routeInfo: string | null;
+  additionalNotes: string | null;
+  notes: string[];
   palletCount: number;
   status: RequestStatus;
   creator: RequestCreator;
   createdAt: string;
+  updatedAt: string;
   deleted: boolean;
+  deletedAt: string | null;
+  trailers: {
+    id: string;
+    requestId: string;
+    trailerId: string;
+    trailer: {
+      id: string;
+      trailerNumber: string;
+      isTransload: boolean;
+      createdAt: string;
+      updatedAt: string;
+    };
+    createdAt: string;
+  }[];
+  partDetails: {
+    id: string;
+    partNumber: string;
+    quantity: number;
+    requestId: string;
+    trailerId: string;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+  logs: {
+    id: string;
+    action: string;
+    timestamp: string;
+    performer: {
+      name: string;
+      role: string;
+    };
+  }[];
 }
 
 interface RequestListProps {
@@ -157,7 +192,7 @@ export default function RequestList({
     router.refresh();
     const intervalId = setInterval(() => {
       router.refresh();
-    }, 30000);
+    }, 30 * 1000);
     return () => clearInterval(intervalId);
   }, [router]);
 
@@ -178,6 +213,7 @@ export default function RequestList({
       "Shipment Number",
       "Plant",
       "Route Info",
+      "Transload Count",
       "Pallet Count",
       "Status",
       "Created By",
@@ -189,6 +225,9 @@ export default function RequestList({
       request.shipmentNumber,
       request.plant || "",
       request.routeInfo || "",
+      (
+        request.trailers?.filter((t) => t.trailer.isTransload).length || 0
+      ).toString(),
       request.palletCount.toString(),
       request.status,
       request.creator.name,
@@ -348,6 +387,13 @@ export default function RequestList({
             <span className="font-medium">Pallet Count:</span>
             <div>{request.palletCount}</div>
           </div>
+          <div>
+            <span className="font-medium">Transload Count:</span>
+            <div>
+              {request.trailers?.filter((t) => t.trailer.isTransload).length ||
+                0}
+            </div>
+          </div>
         </div>
         <div>
           <span className="font-medium">Route Info:</span>
@@ -501,6 +547,7 @@ export default function RequestList({
                     Plant {getSortIcon("plant")}
                   </TableHead>
                   <TableHead>Route Info</TableHead>
+                  <TableHead>Transload Count</TableHead>
                   <TableHead
                     onClick={() => handleSort("palletCount")}
                     className="cursor-pointer"
@@ -541,6 +588,10 @@ export default function RequestList({
                     </TableCell>
                     <TableCell>{request.plant || "-"}</TableCell>
                     <TableCell>{request.routeInfo || "-"}</TableCell>
+                    <TableCell>
+                      {request.trailers?.filter((t) => t.trailer.isTransload)
+                        .length || 0}
+                    </TableCell>
                     <TableCell>{request.palletCount}</TableCell>
                     <TableCell>
                       <Badge className={getStatusBadgeColor(request.status)}>
