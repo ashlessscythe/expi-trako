@@ -11,6 +11,7 @@ import type { FormData } from "@/lib/types";
 
 interface TrailerInput {
   trailerNumber: string;
+  isTransload: boolean;
   partsInput: string;
   parts: Array<{
     partNumber: string;
@@ -25,6 +26,7 @@ export default function NewRequestForm() {
   const [trailerInputs, setTrailerInputs] = useState<TrailerInput[]>([
     {
       trailerNumber: "",
+      isTransload: false,
       partsInput: "",
       parts: [],
     },
@@ -81,6 +83,7 @@ export default function NewRequestForm() {
 
         return {
           trailerNumber: trailer.trailerNumber,
+          isTransload: trailer.isTransload,
           parts,
         };
       });
@@ -138,7 +141,7 @@ export default function NewRequestForm() {
   const handleTrailerChange = (
     index: number,
     field: keyof TrailerInput,
-    value: string
+    value: string | boolean
   ) => {
     setTrailerInputs((prev) => {
       const updated = [...prev];
@@ -155,6 +158,7 @@ export default function NewRequestForm() {
       ...prev,
       {
         trailerNumber: "",
+        isTransload: false,
         partsInput: "",
         parts: [],
       },
@@ -211,17 +215,31 @@ export default function NewRequestForm() {
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor={`trailer-${index}`}>Trailer Number *</Label>
-            <Input
-              id={`trailer-${index}`}
-              value={trailer.trailerNumber}
-              onChange={(e) =>
-                handleTrailerChange(index, "trailerNumber", e.target.value)
-              }
-              required
-              placeholder="Enter trailer number"
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor={`trailer-${index}`}>Trailer Number *</Label>
+              <Input
+                id={`trailer-${index}`}
+                value={trailer.trailerNumber}
+                onChange={(e) =>
+                  handleTrailerChange(index, "trailerNumber", e.target.value)
+                }
+                required
+                placeholder="Enter trailer number"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`isTransload-${index}`}
+                checked={trailer.isTransload}
+                onChange={(e) =>
+                  handleTrailerChange(index, "isTransload", e.target.checked)
+                }
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label htmlFor={`isTransload-${index}`}>Is Transload</Label>
+            </div>
           </div>
 
           <div className="space-y-2">

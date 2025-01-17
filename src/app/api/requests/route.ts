@@ -207,15 +207,18 @@ export async function POST(req: Request) {
 
       // Process each trailer and its parts
       for (const trailerData of trailers) {
-        // Create or find the trailer
+        // Create or update the trailer
         const trailer = await tx.trailer.upsert({
           where: {
             trailerNumber: trailerData.trailerNumber,
           },
           create: {
             trailerNumber: trailerData.trailerNumber,
+            isTransload: trailerData.isTransload,
           },
-          update: {},
+          update: {
+            isTransload: trailerData.isTransload,
+          },
         });
 
         // Link trailer to request

@@ -24,6 +24,8 @@ import type {
   RequestDetail as RequestDetailType,
   PartDetail,
   FormData,
+  FormPart,
+  FormTrailer,
 } from "@/lib/types";
 
 interface RequestDetailProps {
@@ -33,13 +35,9 @@ interface RequestDetailProps {
 interface PartsByTrailer {
   [trailerNumber: string]: {
     trailerId: string;
-    parts: PartDetail[];
+    isTransload: boolean;
+    parts: FormPart[];
   };
-}
-
-interface TrailerParts {
-  trailerNumber: string;
-  parts: { partNumber: string; quantity: number }[];
 }
 
 export default function RequestDetail({ id }: RequestDetailProps) {
@@ -79,10 +77,14 @@ export default function RequestDetail({ id }: RequestDetailProps) {
           if (!acc[trailerNumber]) {
             acc[trailerNumber] = {
               trailerId: part.trailer?.id || "",
+              isTransload: part.trailer?.isTransload || false,
               parts: [],
             };
           }
-          acc[trailerNumber].parts.push(part);
+          acc[trailerNumber].parts.push({
+            partNumber: part.partNumber,
+            quantity: part.quantity,
+          });
           return acc;
         },
         {}
@@ -96,12 +98,10 @@ export default function RequestDetail({ id }: RequestDetailProps) {
         routeInfo: data.routeInfo || "",
         additionalNotes: data.additionalNotes || "",
         trailers: Object.entries(partsByTrailer).map(
-          ([trailerNumber, { parts }]): TrailerParts => ({
+          ([trailerNumber, { isTransload, parts }]): FormTrailer => ({
             trailerNumber,
-            parts: parts.map((part) => ({
-              partNumber: part.partNumber,
-              quantity: part.quantity,
-            })),
+            isTransload: isTransload || false,
+            parts,
           })
         ),
       });
@@ -246,7 +246,10 @@ export default function RequestDetail({ id }: RequestDetailProps) {
   const addTrailer = () => {
     setEditForm({
       ...editForm,
-      trailers: [...editForm.trailers, { trailerNumber: "", parts: [] }],
+      trailers: [
+        ...editForm.trailers,
+        { trailerNumber: "", isTransload: false, parts: [] },
+      ],
     });
   };
 
@@ -324,10 +327,14 @@ export default function RequestDetail({ id }: RequestDetailProps) {
       if (!acc[trailerNumber]) {
         acc[trailerNumber] = {
           trailerId: part.trailer?.id || "",
+          isTransload: part.trailer?.isTransload || false,
           parts: [],
         };
       }
-      acc[trailerNumber].parts.push(part);
+      acc[trailerNumber].parts.push({
+        partNumber: part.partNumber,
+        quantity: part.quantity,
+      });
       return acc;
     },
     {}
@@ -394,13 +401,34 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                         Remove Trailer
                       </Button>
                     </div>
-                    <Input
-                      value={trailer.trailerNumber}
-                      onChange={(e) =>
-                        handleTrailerNumberChange(trailerIndex, e.target.value)
-                      }
-                      placeholder="Enter trailer number"
-                    />
+                    <div className="space-y-2">
+                      <Input
+                        value={trailer.trailerNumber}
+                        onChange={(e) =>
+                          handleTrailerNumberChange(
+                            trailerIndex,
+                            e.target.value
+                          )
+                        }
+                        placeholder="Enter trailer number"
+                      />
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={trailer.isTransload}
+                          onChange={(e) => {
+                            const newTrailers = [...editForm.trailers];
+                            newTrailers[trailerIndex] = {
+                              ...newTrailers[trailerIndex],
+                              isTransload: e.target.checked,
+                            };
+                            setEditForm({ ...editForm, trailers: newTrailers });
+                          }}
+                          className="h-4 w-4 border-gray-300 rounded text-primary focus:ring-primary"
+                        />
+                        <Label>Is this a transload trailer?</Label>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     <div className="flex justify-between items-center">
@@ -562,11 +590,14 @@ export default function RequestDetail({ id }: RequestDetailProps) {
               </div>
               <div className="space-y-4">
                 {Object.entries(partsByTrailer).map(
-                  ([trailerNumber, { parts }]) => (
+                  ([trailerNumber, { isTransload, parts }]) => (
                     <Card key={trailerNumber}>
                       <CardHeader>
-                        <CardTitle className="text-base">
+                        <CardTitle className="text-base flex items-center gap-2">
                           Trailer: {trailerNumber}
+                          {isTransload && (
+                            <Badge variant="secondary">Transload</Badge>
+                          )}
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
