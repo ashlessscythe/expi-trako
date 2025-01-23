@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { RequestStatus, Prisma } from "@prisma/client";
 import { authOptions } from "@/lib/auth-config";
-import { isCustomerService, isAdmin } from "@/lib/auth";
+import { isCustomerService, isAdmin, isWarehouse } from "@/lib/auth";
 import type { AuthUser, SessionUser, FormData } from "@/lib/types";
 
 // GET /api/requests - List all requests with optional filters
@@ -133,9 +133,13 @@ export async function POST(req: Request) {
       role: user.role,
     };
 
-    if (!isCustomerService(authUser) && !isAdmin(authUser)) {
+    if (
+      !isCustomerService(authUser) &&
+      !isAdmin(authUser) &&
+      !isWarehouse(authUser)
+    ) {
       return NextResponse.json(
-        { error: "Only customer service can create requests" },
+        { error: "Only customer service and warehouse can create requests" },
         { status: 403 }
       );
     }
@@ -196,6 +200,10 @@ export async function POST(req: Request) {
           routeInfo,
           additionalNotes,
           createdBy: user.id,
+          status:
+            user.role === "WAREHOUSE"
+              ? RequestStatus.REPORTING
+              : RequestStatus.PENDING,
           logs: {
             create: {
               action: `Request created with ${trailers.length} trailer(s)`,

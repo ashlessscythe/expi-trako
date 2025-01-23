@@ -103,6 +103,7 @@ enum Role {
 
 enum RequestStatus {
   PENDING
+  REPORTING
   APPROVED
   REJECTED
   IN_PROGRESS

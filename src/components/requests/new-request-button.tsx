@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { isCustomerService, isAdmin } from "@/lib/auth";
+import { isCustomerService, isAdmin, isWarehouse } from "@/lib/auth";
 import type { AuthUser } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -20,7 +20,8 @@ export function NewRequestButton() {
     role: user.role,
   };
 
-  const canCreateRequest = isCustomerService(authUser) || isAdmin(authUser);
+  const canCreateRequest =
+    isCustomerService(authUser) || isAdmin(authUser) || isWarehouse(authUser);
 
   if (!canCreateRequest) return null;
 
