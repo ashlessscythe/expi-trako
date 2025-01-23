@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { isCustomerService, isAdmin } from "@/lib/auth";
+import { isCustomerService, isAdmin, isWarehouse } from "@/lib/auth";
 import type { AuthUser } from "@/lib/auth";
 import NewRequestForm from "@/components/requests/new-request-form";
 
@@ -23,7 +23,11 @@ export function ProtectedNewRequestForm() {
       role: user.role,
     };
 
-    if (!isCustomerService(authUser) && !isAdmin(authUser)) {
+    if (
+      !isCustomerService(authUser) &&
+      !isAdmin(authUser) &&
+      !isWarehouse(authUser)
+    ) {
       router.push("/requests");
     }
   }, [user, router]);
@@ -38,9 +42,13 @@ export function ProtectedNewRequestForm() {
     role: user.role,
   };
 
-  if (!isCustomerService(authUser) && !isAdmin(authUser)) {
+  if (
+    !isCustomerService(authUser) &&
+    !isAdmin(authUser) &&
+    !isWarehouse(authUser)
+  ) {
     return null;
   }
 
-  return <NewRequestForm />;
+  return <NewRequestForm userRole={user.role} />;
 }

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { RequestStatus } from "@prisma/client";
+import { RequestStatus, Role } from "@prisma/client";
 import type { FormData } from "@/lib/types";
 
 interface TrailerInput {
@@ -19,7 +19,11 @@ interface TrailerInput {
   }>;
 }
 
-export default function NewRequestForm() {
+interface NewRequestFormProps {
+  userRole: Role;
+}
+
+export default function NewRequestForm({ userRole }: NewRequestFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -38,7 +42,10 @@ export default function NewRequestForm() {
     palletCount: 1,
     routeInfo: "",
     additionalNotes: "",
-    status: RequestStatus.PENDING,
+    status:
+      userRole === "WAREHOUSE"
+        ? RequestStatus.REPORTING
+        : RequestStatus.PENDING,
   });
 
   const parsePartsInput = (input: string) => {

@@ -332,6 +332,8 @@ export default function RequestList({
     switch (status) {
       case "PENDING":
         return "bg-yellow-500";
+      case "REPORTING":
+        return "bg-cyan-500";
       case "APPROVED":
         return "bg-emerald-500";
       case "REJECTED":

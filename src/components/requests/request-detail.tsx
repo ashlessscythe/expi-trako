@@ -268,6 +268,8 @@ export default function RequestDetail({ id }: RequestDetailProps) {
     switch (status) {
       case "PENDING":
         return "bg-yellow-500"; // Waiting to be processed
+      case "REPORTING":
+        return "bg-cyan-500"; // warehouse created req, for reporting only
       case "APPROVED":
         return "bg-emerald-500"; // Request approved, ready to proceed
       case "REJECTED":
