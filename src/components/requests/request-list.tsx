@@ -225,9 +225,21 @@ export default function RequestList({
       request.shipmentNumber,
       request.plant || "",
       request.routeInfo || "",
-      (
-        request.trailers?.filter((t) => t.trailer.isTransload).length || 0
-      ).toString(),
+      Object.values(
+        (request.trailers || [])
+          .filter((t) => t.trailer.isTransload)
+          .reduce((acc, trailer) => {
+            // Get date part only from ISO string
+            const date = trailer.createdAt.split("T")[0];
+            if (!acc[date]) {
+              acc[date] = new Set();
+            }
+            acc[date].add(trailer.trailer.trailerNumber);
+            return acc;
+          }, {} as { [date: string]: Set<string> })
+      )
+        .reduce((sum, uniqueTrailers) => sum + uniqueTrailers.size, 0)
+        .toString(),
       request.palletCount.toString(),
       request.status,
       request.creator.name,
@@ -392,8 +404,18 @@ export default function RequestList({
           <div>
             <span className="font-medium">Transload Count:</span>
             <div>
-              {request.trailers?.filter((t) => t.trailer.isTransload).length ||
-                0}
+              {Object.values(
+                (request.trailers || [])
+                  .filter((t) => t.trailer.isTransload)
+                  .reduce((acc, trailer) => {
+                    const date = trailer.createdAt.split("T")[0];
+                    if (!acc[date]) {
+                      acc[date] = new Set();
+                    }
+                    acc[date].add(trailer.trailer.trailerNumber);
+                    return acc;
+                  }, {} as { [date: string]: Set<string> })
+              ).reduce((sum, uniqueTrailers) => sum + uniqueTrailers.size, 0)}
             </div>
           </div>
         </div>
@@ -591,8 +613,21 @@ export default function RequestList({
                     <TableCell>{request.plant || "-"}</TableCell>
                     <TableCell>{request.routeInfo || "-"}</TableCell>
                     <TableCell>
-                      {request.trailers?.filter((t) => t.trailer.isTransload)
-                        .length || 0}
+                      {Object.values(
+                        (request.trailers || [])
+                          .filter((t) => t.trailer.isTransload)
+                          .reduce((acc, trailer) => {
+                            const date = trailer.createdAt.split("T")[0];
+                            if (!acc[date]) {
+                              acc[date] = new Set();
+                            }
+                            acc[date].add(trailer.trailer.trailerNumber);
+                            return acc;
+                          }, {} as { [date: string]: Set<string> })
+                      ).reduce(
+                        (sum, uniqueTrailers) => sum + uniqueTrailers.size,
+                        0
+                      )}
                     </TableCell>
                     <TableCell>{request.palletCount}</TableCell>
                     <TableCell>

@@ -10,7 +10,12 @@ const prisma = new PrismaClient();
 const argv = yargs(hideBin(process.argv))
   .option("clear", {
     type: "boolean",
-    description: "Clear all existing data before seeding",
+    description: "Clear all existing data including users before seeding",
+    default: false,
+  })
+  .option("clear-data", {
+    type: "boolean",
+    description: "Clear all data except users before seeding",
     default: false,
   })
   .option("use-faker", {
@@ -118,14 +123,24 @@ async function hashPassword(password) {
 }
 
 async function clearDatabase() {
-  console.log("Clearing database...");
+  console.log("Clearing all database data including users...");
   await prisma.requestLog.deleteMany();
   await prisma.partDetail.deleteMany();
   await prisma.requestTrailer.deleteMany();
   await prisma.trailer.deleteMany();
   await prisma.mustGoRequest.deleteMany();
   await prisma.user.deleteMany();
-  console.log("Database cleared");
+  console.log("Database cleared completely");
+}
+
+async function clearDataExceptUsers() {
+  console.log("Clearing all data while preserving users...");
+  await prisma.requestLog.deleteMany();
+  await prisma.partDetail.deleteMany();
+  await prisma.requestTrailer.deleteMany();
+  await prisma.trailer.deleteMany();
+  await prisma.mustGoRequest.deleteMany();
+  console.log("Database data cleared (users preserved)");
 }
 
 async function generateBasicData(count, useFaker) {
@@ -159,19 +174,33 @@ async function generateBasicData(count, useFaker) {
 async function main() {
   console.log("Starting seed...");
 
+  let createdUsers;
+
   if (argv.clear) {
     await clearDatabase();
+    const { users } = await generateBasicData(argv.count, argv.useFaker);
+    // Create users
+    createdUsers = await Promise.all(
+      users.map((user) => prisma.user.create({ data: user }))
+    );
+  } else if (argv["clear-data"]) {
+    await clearDataExceptUsers();
+    // Get existing users when preserving them
+    createdUsers = await prisma.user.findMany();
+  } else {
+    const { users } = await generateBasicData(argv.count, argv.useFaker);
+    // Create users
+    createdUsers = await Promise.all(
+      users.map((user) => prisma.user.create({ data: user }))
+    );
   }
-
-  const { users } = await generateBasicData(argv.count, argv.useFaker);
-
-  // Create users
-  const createdUsers = await Promise.all(
-    users.map((user) => prisma.user.create({ data: user }))
-  );
-  console.log(
-    `Created ${createdUsers.length} users (including default bob@bob.bob)`
-  );
+  if (argv["clear-data"]) {
+    console.log(`Using ${createdUsers.length} existing users`);
+  } else {
+    console.log(
+      `Created ${createdUsers.length} users (including default bob@bob.bob)`
+    );
+  }
 
   // Create must-go requests with trailers and parts
   const requests = [];
@@ -211,7 +240,7 @@ async function main() {
           length: 10,
           casing: "upper",
         }),
-        plant: faker.helpers.arrayElement(["FV58", "PL45", "WH23", "DK89"]),
+        plant: faker.helpers.arrayElement(["FS22", "PL45", "WH23", "DK89"]),
         palletCount: totalPalletCount,
         status: statuses[Math.floor(Math.random() * statuses.length)],
         routeInfo: faker.location.streetAddress(),
@@ -276,13 +305,16 @@ async function main() {
   );
 
   console.log("Seed completed successfully");
-  console.log("\nDefault user created:");
-  console.log("Email: bob@bob.bob");
-  console.log("Password: adminpass");
-  console.log("\nRole-specific passwords:");
-  Object.entries(rolePasswords).forEach(([role, pass]) => {
-    console.log(`${role}: ${pass}`);
-  });
+
+  if (!argv["clear-data"]) {
+    console.log("\nDefault user created:");
+    console.log("Email: bob@bob.bob");
+    console.log("Password: adminpass");
+    console.log("\nRole-specific passwords:");
+    Object.entries(rolePasswords).forEach(([role, pass]) => {
+      console.log(`${role}: ${pass}`);
+    });
+  }
 }
 
 main()
