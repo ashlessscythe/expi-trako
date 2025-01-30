@@ -286,6 +286,7 @@ export async function PATCH(
     const {
       shipmentNumber,
       plant,
+      authorizationNumber,
       trailers,
       palletCount,
       routeInfo,
@@ -293,6 +294,7 @@ export async function PATCH(
     } = body as {
       shipmentNumber: string;
       plant?: string;
+      authorizationNumber?: string;
       trailers: TrailerWithParts[];
       palletCount: number;
       routeInfo?: string;
@@ -325,6 +327,16 @@ export async function PATCH(
     if (plant !== request.plant && (plant || request.plant)) {
       changes.push(
         `plant from ${request.plant || "none"} to ${plant || "none"}`
+      );
+    }
+    if (
+      authorizationNumber !== request.authorizationNumber &&
+      (authorizationNumber || request.authorizationNumber)
+    ) {
+      changes.push(
+        `authorization number from ${
+          request.authorizationNumber || "none"
+        } to ${authorizationNumber || "none"}`
       );
     }
     if (palletCount !== request.palletCount) {
@@ -468,6 +480,7 @@ export async function PATCH(
         data: {
           shipmentNumber,
           plant,
+          authorizationNumber,
           palletCount,
           routeInfo,
           additionalNotes,

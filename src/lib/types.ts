@@ -55,6 +55,7 @@ export interface RequestDetail {
   id: string;
   shipmentNumber: string;
   plant?: string | null;
+  authorizationNumber?: string;
   trailers: RequestTrailer[];
   partDetails: PartDetail[];
   palletCount: number;
@@ -93,6 +94,7 @@ export interface FormTrailer {
 export interface FormData {
   shipmentNumber: string;
   plant?: string | null;
+  authorizationNumber?: string;
   trailers: FormTrailer[];
   palletCount: number;
   routeInfo?: string | null;

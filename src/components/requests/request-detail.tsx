@@ -53,6 +53,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
   const [editForm, setEditForm] = useState<FormData>({
     shipmentNumber: "",
     plant: "",
+    authorizationNumber: "",
     palletCount: 0,
     routeInfo: "",
     additionalNotes: "",
@@ -94,6 +95,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
       setEditForm({
         shipmentNumber: data.shipmentNumber,
         plant: data.plant || "",
+        authorizationNumber: data.authorizationNumber || "",
         palletCount: data.palletCount,
         routeInfo: data.routeInfo || "",
         additionalNotes: data.additionalNotes || "",
@@ -383,6 +385,19 @@ export default function RequestDetail({ id }: RequestDetailProps) {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label>Authorization Number</Label>
+              <Input
+                value={editForm.authorizationNumber || ""}
+                onChange={(e) =>
+                  setEditForm({
+                    ...editForm,
+                    authorizationNumber: e.target.value,
+                  })
+                }
+              />
+            </div>
+
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <Label>Trailers and Parts</Label>
@@ -584,6 +599,14 @@ export default function RequestDetail({ id }: RequestDetailProps) {
               <div>
                 <div className="text-sm text-muted-foreground">Plant</div>
                 <div className="font-medium">{request.plant}</div>
+              </div>
+            )}
+            {request.authorizationNumber && (
+              <div>
+                <div className="text-sm text-muted-foreground">
+                  Authorization Number
+                </div>
+                <div className="font-medium">{request.authorizationNumber}</div>
               </div>
             )}
             <div>

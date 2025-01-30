@@ -18,9 +18,11 @@ export function ViewToggle({
   useEffect(() => {
     const stored = localStorage.getItem("requestsViewAll");
     if (stored !== null) {
-      setShowAll(stored === "true");
+      const storedValue = stored === "true";
+      setShowAll(storedValue);
+      onToggle(storedValue);
     }
-  }, []);
+  }, [onToggle]);
 
   const handleToggle = () => {
     const newValue = !showAll;
