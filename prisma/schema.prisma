@@ -23,6 +23,7 @@ model MustGoRequest {
   id              String          @id @default(cuid())
   shipmentNumber  String
   plant           String?
+  authorizationNumber   String?   @default("")
   palletCount     Int
   status          RequestStatus   @default(PENDING)
   routeInfo       String?
