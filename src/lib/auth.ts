@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { Role } from "@prisma/client";
 import { redirect } from "next/navigation";
+import { authOptions } from "./auth-config";
 
 export interface AuthUser {
   id: string;
@@ -8,7 +9,7 @@ export interface AuthUser {
 }
 
 export async function getAuthUser(): Promise<AuthUser> {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
 
   if (!session?.user) {
     redirect("/");

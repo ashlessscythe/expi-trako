@@ -1,14 +1,8 @@
 import { revalidatePath } from "next/cache";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { RoleSelect } from "@/components/admin/role-select";
 import prisma from "@/lib/prisma";
+import { UsersTable } from "@/components/admin/users-table";
+import { getAuthUser, isAdmin } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 async function getUsers() {
   return await prisma.user.findMany({
@@ -44,36 +38,7 @@ export default async function UsersPage() {
         <h2 className="text-2xl font-semibold">User Management</h2>
       </div>
 
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Joined</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.id}>
-                <TableCell>{user.name}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  <RoleSelect
-                    userId={user.id}
-                    currentRole={user.role}
-                    onRoleChange={updateUserRole}
-                  />
-                </TableCell>
-                <TableCell>
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <UsersTable users={users} onRoleChange={updateUserRole} />
     </div>
   );
 }

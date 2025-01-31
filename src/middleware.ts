@@ -21,7 +21,11 @@ export default withAuth(
       }
     }
 
-    if (pathname.startsWith("/api/admin") || pathname.startsWith("/admin")) {
+    if (
+      pathname.startsWith("/api/admin") ||
+      pathname.startsWith("/admin") ||
+      pathname.startsWith("/api/users")
+    ) {
       if (token?.role !== "ADMIN") {
         return new NextResponse("Access Denied", { status: 403 });
       }
@@ -56,6 +60,7 @@ export const config = {
     "/api/requests/:path*",
     "/api/warehouse/:path*",
     "/api/admin/:path*",
+    "/api/users/:path*",
     "/warehouse/:path*",
     "/admin/:path*",
   ],
