@@ -10,16 +10,9 @@ import {
 } from "@/components/ui/table";
 import { RoleSelect } from "@/components/admin/role-select";
 import { UserEditModal } from "@/components/admin/user-edit-modal";
+import { UserCard } from "@/components/admin/user-card";
 import { useRouter } from "next/navigation";
-import { Role } from "@prisma/client";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  createdAt: Date;
-}
+import { User, Role } from "@prisma/client";
 
 interface UsersTableProps {
   users: User[];
@@ -33,8 +26,20 @@ export function UsersTable({ users, onRoleChange }: UsersTableProps) {
     router.refresh();
   };
 
+  const renderUserCard = (user: User) => (
+    <UserCard key={user.id} user={user} onRoleChange={onRoleChange} onUpdate={handleUpdate} />
+  )
+
   return (
-    <div className="border rounded-lg">
+    <>
+    {/* Mobile View (cards) */}
+    <div className="md:hidden space-y-4">
+        {users.map(renderUserCard)}
+    </div>
+
+
+    {/* Desktop table view */}
+    <div className="hidden md:block border rounded-lg">
       <Table>
         <TableHeader>
           <TableRow>
@@ -68,5 +73,6 @@ export function UsersTable({ users, onRoleChange }: UsersTableProps) {
         </TableBody>
       </Table>
     </div>
+    </>
   );
 }

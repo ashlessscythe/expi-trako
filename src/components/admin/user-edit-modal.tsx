@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface User {
   id: string;
@@ -44,27 +45,18 @@ export function UserEditModal({ user, onUpdate }: UserEditModalProps) {
     try {
       const response = await fetch(`/api/users/${user.id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
       if (!response.ok) throw new Error("Failed to update user");
 
-      toast({
-        title: "Success",
-        description: "User updated successfully",
-      });
+      toast({ title: "Success", description: "User updated successfully" });
 
       onUpdate();
       setOpen(false);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update user",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to update user", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -73,32 +65,43 @@ export function UserEditModal({ user, onUpdate }: UserEditModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Pencil className="h-4 w-4" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hover:bg-muted rounded-full transition-all duration-200 p-2"
+        >
+          <Pencil className="h-4 w-4 text-primary group-hover:text-blue-600 transition" />
           <span className="sr-only">Edit user</span>
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="rounded-lg shadow-xl transition-all transform scale-95 hover:scale-100 duration-200">
         <DialogHeader>
-          <DialogTitle>Edit User</DialogTitle>
+          <DialogTitle className="text-lg font-semibold text-primary">Edit User</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" name="name" defaultValue={user.name} required />
+            <Label htmlFor="name" className="text-muted-foreground">Name</Label>
+            <Input
+              id="name"
+              name="name"
+              defaultValue={user.name}
+              required
+              className="focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
+            />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-muted-foreground">Email</Label>
             <Input
               id="email"
               name="email"
               type="email"
               defaultValue={user.email}
               required
+              className="focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">
+            <Label htmlFor="password" className="text-muted-foreground">
               Password (leave blank to keep unchanged)
             </Label>
             <Input
@@ -106,17 +109,14 @@ export function UserEditModal({ user, onUpdate }: UserEditModalProps) {
               name="password"
               type="password"
               autoComplete="new-password"
+              className="focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
             />
           </div>
           <div className="flex justify-end space-x-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="transition-all">
               {loading ? "Saving..." : "Save Changes"}
             </Button>
           </div>
