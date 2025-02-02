@@ -13,41 +13,55 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth-config";
 import { Header } from "@/components/header";
 
+
 async function getReportData() {
   const now = new Date();
-  const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
+  const lastDay = new Date();
+  lastDay.setDate(now.getDate() - 1);
 
-  const [recentRequests, userStats, statusDistribution] = await Promise.all([
-    // Get recent requests with creator info
+  const last3Days = new Date();
+  last3Days.setDate(now.getDate() - 3);
+
+  const lastWeek = new Date();
+  lastWeek.setDate(now.getDate() - 7);
+
+  const [recentRequests, userStats, statusDistribution, transloadTrailers] = await Promise.all([
     prisma.mustGoRequest.findMany({
       take: 10,
       orderBy: { createdAt: "desc" },
       include: {
-        creator: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
+        creator: { select: { name: true, email: true } },
       },
     }),
-    // Get user role distribution
-    prisma.user.groupBy({
-      by: ["role"],
-      _count: true,
-    }),
-    // Get request status distribution
-    prisma.mustGoRequest.groupBy({
-      by: ["status"],
-      _count: true,
+    prisma.user.groupBy({ by: ["role"], _count: true }),
+    prisma.mustGoRequest.groupBy({ by: ["status"], _count: true }),
+
+    // Fetch transload trailers
+    prisma.trailer.findMany({
+      where: { isTransload: true },
+      select: {
+        trailerNumber: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: "desc" },
     }),
   ]);
 
-  return {
-    recentRequests,
-    userStats,
-    statusDistribution,
+  // Deduplicate by trailerNumber and createdAt (YYYY-MM-DD)
+  const dedupedTransloads = Array.from(
+    new Map(
+      transloadTrailers.map((t) => [`${t.trailerNumber}-${t.createdAt.toISOString().split("T")[0]}`, t])
+    ).values()
+  );
+
+  // Categorize by time range
+  const transloadStats = {
+    lastDay: dedupedTransloads.filter((t) => new Date(t.createdAt) >= lastDay),
+    last3Days: dedupedTransloads.filter((t) => new Date(t.createdAt) >= last3Days),
+    lastWeek: dedupedTransloads.filter((t) => new Date(t.createdAt) >= lastWeek),
   };
+
+  return { recentRequests, userStats, statusDistribution, transloadStats };
 }
 
 export default async function ReportsPage() {
@@ -61,7 +75,7 @@ export default async function ReportsPage() {
     redirect("/");
   }
 
-  const { recentRequests, userStats, statusDistribution } =
+  const { recentRequests, userStats, statusDistribution, transloadStats } =
     await getReportData();
 
   return (
@@ -108,6 +122,25 @@ export default async function ReportsPage() {
               </div>
             </Card>
           </div>
+
+          {/* Transload Trailer Summary */}
+          <Card className="p-4">
+            <h3 className="text-lg font-medium mb-4">Transload Trailers by Date</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Last 24 Hours</span>
+                <span className="font-medium">{transloadStats.lastDay.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Last 3 Days</span>
+                <span className="font-medium">{transloadStats.last3Days.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Last 7 Days</span>
+                <span className="font-medium">{transloadStats.lastWeek.length}</span>
+              </div>
+            </div>
+          </Card>
 
           {/* Recent Requests Table */}
           <div className="mt-8">
