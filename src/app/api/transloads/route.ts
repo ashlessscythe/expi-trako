@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { getAuthUser, isAdmin } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
@@ -10,18 +10,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch transload trailers and their associated request info
-    const transloadTrailers = await prisma.trailer.findMany({
+    const transloadTrailers = await prisma.requestTrailer.findMany({
       where: { isTransload: true },
-      select: {
-        trailerNumber: true,
-        createdAt: true,
-        requests: {
+      include: {
+        trailer: {
           select: {
-            request: {
+            trailerNumber: true,
+          },
+        },
+        request: {
+          select: {
+            plant: true,
+            creator: {
               select: {
-                plant: true,
-                createdBy: true,
-                creator: { select: { name: true } },
+                name: true,
               },
             },
           },
@@ -30,20 +32,25 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    // Deduplicate by trailerNumber and date (YYYY-MM-DD)
-    const uniqueTransloads = Array.from(
-      new Map(
-        transloadTrailers.map((t) => [
-          `${t.trailerNumber}-${t.createdAt.toISOString().split("T")[0]}`,
-          {
-            date: t.createdAt.toISOString().split("T")[0],
-            trailerNumber: t.trailerNumber,
-            plant: t.requests[0]?.request?.plant || "N/A",
-            createdBy: t.requests[0]?.request?.creator.name || "Unknown",
-          },
-        ])
-      ).values()
-    );
+    // Group by trailer number and date using RequestTrailer's createdAt
+    const transloadsByDay = transloadTrailers.reduce((acc, t) => {
+      const date = t.createdAt.toISOString().split("T")[0];
+      const key = `${t.trailer.trailerNumber}-${date}`;
+      
+      // Only take the first occurrence per trailer per day
+      if (!acc.has(key)) {
+        acc.set(key, {
+          date,
+          trailerNumber: t.trailer.trailerNumber,
+          plant: t.request.plant || "N/A",
+          createdBy: t.request.creator.name || "Unknown",
+        });
+      }
+      return acc;
+    }, new Map());
+
+    // Convert to array of unique transloads (allowing same trailer on different days)
+    const uniqueTransloads = Array.from(transloadsByDay.values());
 
     // Convert to CSV format
     const csvHeader = "Date,Trailer Number,Plant,Created By\n";

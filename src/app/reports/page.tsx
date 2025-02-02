@@ -37,10 +37,10 @@ async function getReportData() {
     prisma.mustGoRequest.groupBy({ by: ["status"], _count: true }),
 
     // Fetch transload trailers
-    prisma.trailer.findMany({
+    prisma.requestTrailer.findMany({
       where: { isTransload: true },
       select: {
-        trailerNumber: true,
+        trailer: true,
         createdAt: true,
       },
       orderBy: { createdAt: "desc" },
@@ -50,7 +50,7 @@ async function getReportData() {
   // Deduplicate by trailerNumber and createdAt (YYYY-MM-DD)
   const dedupedTransloads = Array.from(
     new Map(
-      transloadTrailers.map((t) => [`${t.trailerNumber}-${t.createdAt.toISOString().split("T")[0]}`, t])
+      transloadTrailers.map((t) => [`${t.trailer.trailerNumber}-${t.createdAt.toISOString().split("T")[0]}`, t])
     ).values()
   );
 

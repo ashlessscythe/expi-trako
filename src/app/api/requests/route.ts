@@ -127,9 +127,21 @@ export async function POST(req: Request) {
 
     const user = session.user as SessionUser;
 
+    // Verify user exists in database
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+    });
+
+    if (!dbUser) {
+      return NextResponse.json(
+        { error: "User not found in database" },
+        { status: 404 }
+      );
+    }
+
     const authUser: AuthUser = {
-      id: user.id,
-      role: user.role,
+      id: dbUser.id,
+      role: dbUser.role,
     };
 
     if (
@@ -198,15 +210,15 @@ export async function POST(req: Request) {
           palletCount,
           routeInfo,
           additionalNotes,
-          createdBy: user.id,
+          createdBy: dbUser.id,
           status:
-            user.role === "WAREHOUSE"
+            dbUser.role === "WAREHOUSE"
               ? RequestStatus.REPORTING
               : RequestStatus.PENDING,
           logs: {
             create: {
               action: `Request created with ${trailers.length} trailer(s)`,
-              performedBy: user.id,
+              performedBy: dbUser.id,
             },
           },
         },
@@ -221,18 +233,16 @@ export async function POST(req: Request) {
           },
           create: {
             trailerNumber: trailerData.trailerNumber,
-            isTransload: trailerData.isTransload,
           },
-          update: {
-            isTransload: trailerData.isTransload,
-          },
+          update: {},
         });
 
-        // Link trailer to request
+        // Link trailer to request with isTransload flag
         await tx.requestTrailer.create({
           data: {
             requestId: request.id,
             trailerId: trailer.id,
+            isTransload: trailerData.isTransload || false,
           },
         });
 

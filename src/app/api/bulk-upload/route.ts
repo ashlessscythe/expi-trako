@@ -195,22 +195,6 @@ async function processRows(
     errors: [],
   };
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  if (!user) {
-    return {
-      ...result,
-      success: false,
-      failedRows: rows.length,
-      errors: rows.map((_, index) => ({
-        row: index + 1,
-        errors: [`User with ID ${userId} not found`],
-      })),
-    };
-  }
-
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     const validation = validateRow(row, i);
@@ -256,11 +240,7 @@ async function processRows(
             logs: {
               create: {
                 action: `Request created with ${row.parts.length} part number(s)`,
-                performer: {
-                  connect: {
-                    id: userId,
-                  },
-                },
+                performedBy: userId,
               },
             },
           },
@@ -279,7 +259,7 @@ async function processRows(
             update: {},
           });
 
-          // Link trailer to request
+          // Link trailer to request with isTransload defaulting to false
           await tx.requestTrailer.create({
             data: {
               request: {
@@ -292,6 +272,7 @@ async function processRows(
                   id: trailer.id,
                 },
               },
+              isTransload: false, // Default to false for bulk uploads
             },
           });
 
@@ -344,16 +325,21 @@ export async function POST(request: NextRequest) {
 
     const user = session.user as SessionUser;
 
-    if (!user.id) {
+    // Verify user exists in database
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+    });
+
+    if (!dbUser) {
       return NextResponse.json(
-        { error: "Invalid user session" },
-        { status: 401 }
+        { error: "User not found in database" },
+        { status: 404 }
       );
     }
 
     const authUser: AuthUser = {
-      id: user.id,
-      role: user.role,
+      id: dbUser.id,
+      role: dbUser.role,
     };
 
     if (
@@ -394,7 +380,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await processRows(rows, user.id, user.role);
+    const result = await processRows(rows, dbUser.id, dbUser.role);
 
     return NextResponse.json(result);
   } catch (error) {

@@ -228,7 +228,6 @@ async function main() {
     const trailer = await prisma.trailer.create({
       data: {
         trailerNumber: generateTrailerNumber(),
-        isTransload: Math.random() < 0.5,   // 50% random
         createdAt,
         updatedAt: createdAt,
       },
@@ -256,6 +255,7 @@ async function main() {
                 id: trailer.id,
               },
             },
+            isTransload: Math.random() < 0.5,   // 50% chance
             createdAt,
           },
         },

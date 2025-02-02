@@ -28,13 +28,12 @@ type DbPartDetail = {
   quantity: number;
   requestId: string;
   trailerId: string;
-  trailer: {
-    id: string;
-    trailerNumber: string;
-    isTransload: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-  };
+    trailer: {
+      id: string;
+      trailerNumber: string;
+      createdAt: Date;
+      updatedAt: Date;
+    };
   createdAt: Date;
   updatedAt: Date;
 };
@@ -417,16 +416,16 @@ export async function PATCH(
 
     // Log transload status changes
     trailers.forEach((trailer) => {
-      const existingTrailer = request.trailers.find(
+      const existingTrailerRelation = request.trailers.find(
         (t) => t.trailer.trailerNumber === trailer.trailerNumber
       );
       if (
-        existingTrailer &&
-        existingTrailer.trailer.isTransload !== trailer.isTransload
+        existingTrailerRelation &&
+        existingTrailerRelation.isTransload !== trailer.isTransload
       ) {
         changes.push(
           `transload status for trailer ${trailer.trailerNumber} from ${
-            existingTrailer.trailer.isTransload ? "yes" : "no"
+            existingTrailerRelation.isTransload ? "yes" : "no"
           } to ${trailer.isTransload ? "yes" : "no"}`
         );
       }
@@ -513,17 +512,15 @@ export async function PATCH(
           where: { trailerNumber: trailerData.trailerNumber },
           create: {
             trailerNumber: trailerData.trailerNumber,
-            isTransload: trailerData.isTransload || false,
           },
-          update: {
-            isTransload: trailerData.isTransload || false,
-          },
+          update: {},
         });
 
         await tx.requestTrailer.create({
           data: {
             request: { connect: { id: request.id } },
             trailer: { connect: { id: trailer.id } },
+            isTransload: trailerData.isTransload || false,
           },
         });
 

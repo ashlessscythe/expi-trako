@@ -59,10 +59,10 @@ interface Request {
     trailer: {
       id: string;
       trailerNumber: string;
-      isTransload: boolean;
       createdAt: string;
       updatedAt: string;
     };
+    isTransload: boolean;
     createdAt: string;
   }[];
   partDetails: {
@@ -246,7 +246,7 @@ export default function RequestList({
       request.routeInfo || "",
       Object.values(
         (request.trailers || [])
-          .filter((t) => t.trailer.isTransload)
+          .filter((t) => t.isTransload)
           .reduce((acc, trailer) => {
             // Get date part only from ISO string
             const date = trailer.createdAt.split("T")[0];
@@ -425,7 +425,7 @@ export default function RequestList({
             <div>
               {Object.values(
                 (request.trailers || [])
-                  .filter((t) => t.trailer.isTransload)
+                  .filter((t) => t.isTransload)
                   .reduce((acc, trailer) => {
                     const date = trailer.createdAt.split("T")[0];
                     if (!acc[date]) {
@@ -643,7 +643,7 @@ export default function RequestList({
                     <TableCell>
                       {Object.values(
                         (request.trailers || [])
-                          .filter((t) => t.trailer.isTransload)
+                          .filter((t) => t.isTransload)
                           .reduce((acc, trailer) => {
                             const date = trailer.createdAt.split("T")[0];
                             if (!acc[date]) {

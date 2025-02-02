@@ -75,10 +75,11 @@ export default function RequestDetail({ id }: RequestDetailProps) {
       const partsByTrailer = (data.partDetails || []).reduce(
         (acc: PartsByTrailer, part: PartDetail) => {
           const trailerNumber = part.trailer?.trailerNumber || "Unknown";
+          const requestTrailer = data.trailers.find(t => t.trailerId === part.trailer?.id);
           if (!acc[trailerNumber]) {
             acc[trailerNumber] = {
               trailerId: part.trailer?.id || "",
-              isTransload: part.trailer?.isTransload || false,
+              isTransload: requestTrailer?.isTransload || false,
               parts: [],
             };
           }
@@ -328,10 +329,11 @@ export default function RequestDetail({ id }: RequestDetailProps) {
   const partsByTrailer = (request.partDetails || []).reduce(
     (acc: PartsByTrailer, part: PartDetail) => {
       const trailerNumber = part.trailer?.trailerNumber || "Unknown";
+      const requestTrailer = request.trailers.find(t => t.trailerId === part.trailer?.id);
       if (!acc[trailerNumber]) {
         acc[trailerNumber] = {
           trailerId: part.trailer?.id || "",
-          isTransload: part.trailer?.isTransload || false,
+          isTransload: requestTrailer?.isTransload || false,
           parts: [],
         };
       }
