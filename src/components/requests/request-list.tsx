@@ -207,6 +207,25 @@ export default function RequestList({
     setDateRange({ start: "", end: "" });
   };
 
+  const downloadTransloadCSV = async () => {
+    try {
+      const response = await fetch("/api/transloads");
+      if (!response.ok) throw new Error("Failed to download CSV");
+  
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "transloads.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading CSV:", error);
+    }
+  };
+
   const downloadAsCSV = () => {
     // Convert filtered requests to CSV format
     const headers = [
@@ -531,13 +550,22 @@ export default function RequestList({
             Clear Filters
           </Button>
           {(user?.role === "ADMIN" || user?.role === "REPORT_RUNNER") && (
-            <Button
-              variant="outline"
-              onClick={downloadAsCSV}
-              className="text-sm"
-            >
-              Download CSV
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={downloadAsCSV}
+                className="text-sm"
+              >
+                Download CSV
+              </Button>
+              <Button
+                variant="outline"
+                onClick={downloadTransloadCSV}
+                className="text-sm"
+              >
+                Download Transloads
+              </Button>
+            </>
           )}
         </div>
       </div>
