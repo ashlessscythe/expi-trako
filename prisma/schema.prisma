@@ -57,6 +57,7 @@ model RequestTrailer {
   request         MustGoRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   trailerId       String
   trailer         Trailer       @relation(fields: [trailerId], references: [id], onDelete: Cascade)
+  status          ItemStatus    @default(PENDING)
   createdAt       DateTime      @default(now())
   isTransload     Boolean       @default(false)
 
@@ -69,6 +70,7 @@ model PartDetail {
   id              String        @id @default(cuid())
   partNumber      String
   quantity        Int
+  status          ItemStatus @default(PENDING)
   requestId       String        // Link to specific request
   request         MustGoRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   trailerId       String        // Link to specific trailer
@@ -92,6 +94,14 @@ model RequestLog {
 
   @@index([mustGoRequestId])
   @@index([performedBy])
+}
+
+enum ItemStatus {
+  PENDING      // The request is new and awaiting processing
+  IN_PROGRESS  // The part is actively being expedited
+  COMPLETED    // The request has been fulfilled
+  CANCELED     // The request was canceled
+  ON_HOLD      // The request is temporarily paused
 }
 
 enum Role {

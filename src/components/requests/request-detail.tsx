@@ -75,7 +75,9 @@ export default function RequestDetail({ id }: RequestDetailProps) {
       const partsByTrailer = (data.partDetails || []).reduce(
         (acc: PartsByTrailer, part: PartDetail) => {
           const trailerNumber = part.trailer?.trailerNumber || "Unknown";
-          const requestTrailer = data.trailers.find(t => t.trailerId === part.trailer?.id);
+          const requestTrailer = data.trailers.find(
+            (t) => t.trailerId === part.trailer?.id
+          );
           if (!acc[trailerNumber]) {
             acc[trailerNumber] = {
               trailerId: part.trailer?.id || "",
@@ -174,6 +176,61 @@ export default function RequestDetail({ id }: RequestDetailProps) {
   };
 
   const handleEdit = async () => {
+    // Validate required fields
+    if (!editForm.shipmentNumber) {
+      toast({
+        title: "Error",
+        description: "Shipment number is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!editForm.trailers.length) {
+      toast({
+        title: "Error",
+        description: "At least one trailer is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate each trailer has at least one part with non-zero quantity
+    const invalidTrailer = editForm.trailers.find(
+      (trailer) =>
+        !trailer.parts.length ||
+        !trailer.parts.some((part) => part.partNumber && part.quantity > 0)
+    );
+
+    if (invalidTrailer) {
+      toast({
+        title: "Error",
+        description:
+          "Each trailer must have at least one part with a part number and quantity greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (editForm.palletCount <= 0) {
+      toast({
+        title: "Error",
+        description: "Pallet count must be greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate plant format if provided
+    if (editForm.plant && !/^[a-zA-Z0-9]{4}$/.test(editForm.plant)) {
+      toast({
+        title: "Error",
+        description: "Plant must be exactly 4 alphanumeric characters",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setUpdating(true);
     try {
       const response = await fetch(`/api/requests/${id}`, {
@@ -247,11 +304,20 @@ export default function RequestDetail({ id }: RequestDetailProps) {
   };
 
   const addTrailer = () => {
+    toast({
+      title: "Note",
+      description:
+        "Each trailer must have at least one part number with non-zero quantity",
+    });
     setEditForm({
       ...editForm,
       trailers: [
         ...editForm.trailers,
-        { trailerNumber: "", isTransload: false, parts: [] },
+        {
+          trailerNumber: "",
+          isTransload: false,
+          parts: [{ partNumber: "", quantity: 0 }],
+        },
       ],
     });
   };
@@ -329,7 +395,9 @@ export default function RequestDetail({ id }: RequestDetailProps) {
   const partsByTrailer = (request.partDetails || []).reduce(
     (acc: PartsByTrailer, part: PartDetail) => {
       const trailerNumber = part.trailer?.trailerNumber || "Unknown";
-      const requestTrailer = request.trailers.find(t => t.trailerId === part.trailer?.id);
+      const requestTrailer = request.trailers.find(
+        (t) => t.trailerId === part.trailer?.id
+      );
       if (!acc[trailerNumber]) {
         acc[trailerNumber] = {
           trailerId: part.trailer?.id || "",
@@ -348,7 +416,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
 
   if (isEditing) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 max-w-7xl mx-auto p-4">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">Edit Request</h1>
           <div className="space-x-2">
@@ -365,14 +433,16 @@ export default function RequestDetail({ id }: RequestDetailProps) {
           <CardHeader>
             <CardTitle>Request Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
             <div className="space-y-2">
-              <Label>Shipment Number</Label>
+              <Label>Shipment Number *</Label>
               <Input
                 value={editForm.shipmentNumber}
                 onChange={(e) =>
                   setEditForm({ ...editForm, shipmentNumber: e.target.value })
                 }
+                required
+                placeholder="Enter shipment number"
               />
             </div>
 
@@ -384,6 +454,9 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                   setEditForm({ ...editForm, plant: e.target.value })
                 }
                 maxLength={4}
+                pattern="[a-zA-Z0-9]{4}"
+                title="Plant must be exactly 4 alphanumeric characters"
+                placeholder="Enter 4-character plant code"
               />
             </div>
 
@@ -397,112 +470,12 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                     authorizationNumber: e.target.value,
                   })
                 }
+                placeholder="Enter authorization number"
               />
             </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <Label>Trailers and Parts</Label>
-                <Button onClick={addTrailer} variant="outline" size="sm">
-                  Add Trailer
-                </Button>
-              </div>
-              {editForm.trailers.map((trailer, trailerIndex) => (
-                <Card key={trailerIndex}>
-                  <CardHeader className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <Label>Trailer Number</Label>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => removeTrailer(trailerIndex)}
-                      >
-                        Remove Trailer
-                      </Button>
-                    </div>
-                    <div className="space-y-2">
-                      <Input
-                        value={trailer.trailerNumber}
-                        onChange={(e) =>
-                          handleTrailerNumberChange(
-                            trailerIndex,
-                            e.target.value
-                          )
-                        }
-                        placeholder="Enter trailer number"
-                      />
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={trailer.isTransload}
-                          onChange={(e) => {
-                            const newTrailers = [...editForm.trailers];
-                            newTrailers[trailerIndex] = {
-                              ...newTrailers[trailerIndex],
-                              isTransload: e.target.checked,
-                            };
-                            setEditForm({ ...editForm, trailers: newTrailers });
-                          }}
-                          className="h-4 w-4 border-gray-300 rounded text-primary focus:ring-primary"
-                        />
-                        <Label>Is this a transload trailer?</Label>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <Label>Parts</Label>
-                      <Button
-                        onClick={() => addPart(trailerIndex)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        Add Part
-                      </Button>
-                    </div>
-                    {trailer.parts.map((part, partIndex) => (
-                      <div key={partIndex} className="flex gap-2">
-                        <Input
-                          placeholder="Part Number"
-                          value={part.partNumber}
-                          onChange={(e) =>
-                            handlePartChange(
-                              trailerIndex,
-                              partIndex,
-                              "partNumber",
-                              e.target.value
-                            )
-                          }
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Quantity"
-                          value={part.quantity}
-                          onChange={(e) =>
-                            handlePartChange(
-                              trailerIndex,
-                              partIndex,
-                              "quantity",
-                              e.target.value
-                            )
-                          }
-                        />
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => removePart(trailerIndex, partIndex)}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
             <div className="space-y-2">
-              <Label>Pallet Count</Label>
+              <Label>Pallet Count *</Label>
               <Input
                 type="number"
                 value={editForm.palletCount}
@@ -512,20 +485,134 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                     palletCount: parseInt(e.target.value) || 0,
                   })
                 }
+                required
+                min="1"
+                placeholder="Enter pallet count"
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex justify-between items-center">
+                <Label>Trailers and Parts *</Label>
+                <Button onClick={addTrailer} variant="outline" size="sm">
+                  Add Trailer
+                </Button>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                {editForm.trailers.map((trailer, trailerIndex) => (
+                  <Card key={trailerIndex}>
+                    <CardHeader className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <Label>Trailer Number *</Label>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => removeTrailer(trailerIndex)}
+                        >
+                          Remove Trailer
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                        <Input
+                          value={trailer.trailerNumber}
+                          onChange={(e) =>
+                            handleTrailerNumberChange(
+                              trailerIndex,
+                              e.target.value
+                            )
+                          }
+                          required
+                          placeholder="Enter trailer number"
+                        />
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={trailer.isTransload}
+                            onChange={(e) => {
+                              const newTrailers = [...editForm.trailers];
+                              newTrailers[trailerIndex] = {
+                                ...newTrailers[trailerIndex],
+                                isTransload: e.target.checked,
+                              };
+                              setEditForm({
+                                ...editForm,
+                                trailers: newTrailers,
+                              });
+                            }}
+                            className="h-4 w-4 border-gray-300 rounded text-primary focus:ring-primary"
+                          />
+                          <Label>Is this a transload trailer?</Label>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <Label>Parts *</Label>
+                        <Button
+                          onClick={() => addPart(trailerIndex)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Add Part
+                        </Button>
+                      </div>
+                      {trailer.parts.map((part, partIndex) => (
+                        <div key={partIndex} className="flex gap-2">
+                          <Input
+                            placeholder="Part Number"
+                            value={part.partNumber}
+                            onChange={(e) =>
+                              handlePartChange(
+                                trailerIndex,
+                                partIndex,
+                                "partNumber",
+                                e.target.value
+                              )
+                            }
+                            required
+                          />
+                          <Input
+                            type="number"
+                            placeholder="Quantity"
+                            value={part.quantity}
+                            onChange={(e) =>
+                              handlePartChange(
+                                trailerIndex,
+                                partIndex,
+                                "quantity",
+                                e.target.value
+                              )
+                            }
+                            required
+                            min="1"
+                          />
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => removePart(trailerIndex, partIndex)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2 lg:col-span-2">
               <Label>Route Info</Label>
               <Input
                 value={editForm.routeInfo || ""}
                 onChange={(e) =>
                   setEditForm({ ...editForm, routeInfo: e.target.value })
                 }
+                placeholder="Enter route information"
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 lg:col-span-2">
               <Label>Additional Notes</Label>
               <Textarea
                 value={editForm.additionalNotes || ""}
@@ -533,6 +620,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                   setEditForm({ ...editForm, additionalNotes: e.target.value })
                 }
                 rows={4}
+                placeholder="Enter any additional notes"
               />
             </div>
           </CardContent>
@@ -542,7 +630,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto p-4">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Request Details</h1>
         <div className="space-x-2">
@@ -555,12 +643,12 @@ export default function RequestDetail({ id }: RequestDetailProps) {
         </div>
       </div>
 
-      <div className="space-y-6">
-        <Card>
+      <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
+        <Card className="lg:h-fit">
           <CardHeader>
             <CardTitle>Created By</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
             <div>
               <div className="text-sm text-muted-foreground">Name</div>
               <div className="font-medium">{request.creator.name}</div>
@@ -586,11 +674,34 @@ export default function RequestDetail({ id }: RequestDetailProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="lg:h-fit">
+          <CardHeader>
+            <CardTitle>Status Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2 items-center">
+              <div>
+                <div className="text-sm text-muted-foreground">Status</div>
+                <Badge className={getStatusBadgeColor(request.status)}>
+                  {request.status.replace("_", " ")}
+                </Badge>
+              </div>
+              {request.deleted && <Badge variant="destructive">Deleted</Badge>}
+            </div>
+            {request.routeInfo && (
+              <div>
+                <div className="text-sm text-muted-foreground">Route Info</div>
+                <div className="font-medium">{request.routeInfo}</div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Request Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-x-8">
             <div>
               <div className="text-sm text-muted-foreground">
                 Shipment Number
@@ -612,75 +723,57 @@ export default function RequestDetail({ id }: RequestDetailProps) {
               </div>
             )}
             <div>
-              <div className="text-sm text-muted-foreground">
-                Parts by Trailer
-              </div>
-              <div className="space-y-4">
-                {Object.entries(partsByTrailer).map(
-                  ([trailerNumber, { isTransload, parts }]) => (
-                    <Card key={trailerNumber}>
-                      <CardHeader>
-                        <CardTitle className="text-base flex items-center gap-2">
-                          Trailer: {trailerNumber}
-                          {isTransload && (
-                            <Badge variant="secondary">Transload</Badge>
-                          )}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-1">
-                          {parts.map((part, index) => (
-                            <div
-                              key={index}
-                              className="bg-muted px-2 py-1 rounded flex justify-between"
-                            >
-                              <span>{part.partNumber}</span>
-                              <span className="text-muted-foreground">
-                                Qty: {part.quantity}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                )}
-              </div>
-            </div>
-            <div>
               <div className="text-sm text-muted-foreground">Pallet Count</div>
               <div className="font-medium">{request.palletCount}</div>
             </div>
-            <div className="flex gap-2 items-center">
-              <div>
-                <div className="text-sm text-muted-foreground">Status</div>
-                <Badge className={getStatusBadgeColor(request.status)}>
-                  {request.status.replace("_", " ")}
-                </Badge>
-              </div>
-              {request.deleted && <Badge variant="destructive">Deleted</Badge>}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Parts by Trailer</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {Object.entries(partsByTrailer).map(
+                ([trailerNumber, { isTransload, parts }]) => (
+                  <Card key={trailerNumber}>
+                    <CardHeader>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        Trailer: {trailerNumber}
+                        {isTransload && (
+                          <Badge variant="secondary">Transload</Badge>
+                        )}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-1">
+                        {parts.map((part, index) => (
+                          <div
+                            key={index}
+                            className="bg-muted px-2 py-1 rounded flex justify-between"
+                          >
+                            <span>{part.partNumber}</span>
+                            <span className="text-muted-foreground">
+                              Qty: {part.quantity}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              )}
             </div>
-            {request.routeInfo && (
-              <div>
-                <div className="text-sm text-muted-foreground">Route Info</div>
-                <div className="font-medium">{request.routeInfo}</div>
-              </div>
-            )}
-            {request.additionalNotes && (
-              <div>
-                <div className="text-sm text-muted-foreground">Notes</div>
-                <div className="font-medium">{request.additionalNotes}</div>
-              </div>
-            )}
           </CardContent>
         </Card>
 
         {canUpdateStatus && (
-          <Card>
+          <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Update Request</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6">
               <div className="space-y-2">
                 <div className="text-sm text-muted-foreground">Status</div>
                 <Select
@@ -702,7 +795,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                 </Select>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 lg:col-span-2">
                 <div className="text-sm text-muted-foreground">Add Note</div>
                 <Textarea
                   placeholder="Add a note (optional)"
@@ -720,7 +813,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                   updating ||
                   (!note && (!newStatus || newStatus === request.status))
                 }
-                className="w-full"
+                className="w-full lg:col-span-2"
               >
                 {updating ? "Updating..." : "Update Request"}
               </Button>
@@ -728,7 +821,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
           </Card>
         )}
 
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Notes</CardTitle>
           </CardHeader>
@@ -749,7 +842,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>History</CardTitle>
           </CardHeader>
