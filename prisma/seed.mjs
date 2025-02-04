@@ -38,7 +38,7 @@ const roles = [
   "PENDING",
 ];
 
-const statuses = [
+const requestStatuses = [
   "PENDING",
   "APPROVED",
   "REJECTED",
@@ -50,6 +50,14 @@ const statuses = [
   "ON_HOLD",
   "CANCELLED",
   "FAILED",
+];
+
+const itemStatuses = [
+  "PENDING",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CANCELED",
+  "ON_HOLD",
 ];
 
 const rolePasswords = {
@@ -242,7 +250,8 @@ async function main() {
         }),
         plant: faker.helpers.arrayElement(["FS22", "PL45", "WH23", "DK89"]),
         palletCount: totalPalletCount,
-        status: statuses[Math.floor(Math.random() * statuses.length)],
+        status:
+          requestStatuses[Math.floor(Math.random() * requestStatuses.length)],
         routeInfo: faker.location.streetAddress(),
         additionalNotes: selectedNotes.join(" | "),
         notes: selectedNotes,
@@ -255,7 +264,9 @@ async function main() {
                 id: trailer.id,
               },
             },
-            isTransload: Math.random() < 0.5,   // 50% chance
+            isTransload: Math.random() < 0.5, // 50% chance
+            status:
+              itemStatuses[Math.floor(Math.random() * itemStatuses.length)],
             createdAt,
           },
         },
@@ -281,6 +292,8 @@ async function main() {
                 id: trailer.id,
               },
             },
+            status:
+              itemStatuses[Math.floor(Math.random() * itemStatuses.length)],
             createdAt,
             updatedAt: createdAt,
           },

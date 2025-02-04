@@ -18,7 +18,6 @@ interface Part {
 
 interface TrailerWithParts {
   trailerNumber: string;
-  isTransload: boolean;
   parts: Part[];
 }
 
@@ -28,12 +27,12 @@ type DbPartDetail = {
   quantity: number;
   requestId: string;
   trailerId: string;
-    trailer: {
-      id: string;
-      trailerNumber: string;
-      createdAt: Date;
-      updatedAt: Date;
-    };
+  trailer: {
+    id: string;
+    trailerNumber: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 };
@@ -414,23 +413,6 @@ export async function PATCH(
       partChanges.push(`moved parts from trailer ${oldNum} to ${newNum}`);
     });
 
-    // Log transload status changes
-    trailers.forEach((trailer) => {
-      const existingTrailerRelation = request.trailers.find(
-        (t) => t.trailer.trailerNumber === trailer.trailerNumber
-      );
-      if (
-        existingTrailerRelation &&
-        existingTrailerRelation.isTransload !== trailer.isTransload
-      ) {
-        changes.push(
-          `transload status for trailer ${trailer.trailerNumber} from ${
-            existingTrailerRelation.isTransload ? "yes" : "no"
-          } to ${trailer.isTransload ? "yes" : "no"}`
-        );
-      }
-    });
-
     // Then log part changes
     newParts.forEach(({ key, part, trailerNumber }) => {
       const currentPart = currentParts[key];
@@ -520,7 +502,7 @@ export async function PATCH(
           data: {
             request: { connect: { id: request.id } },
             trailer: { connect: { id: trailer.id } },
-            isTransload: trailerData.isTransload || false,
+            isTransload: false,
           },
         });
 

@@ -105,9 +105,8 @@ export default function RequestDetail({ id }: RequestDetailProps) {
         routeInfo: data.routeInfo || "",
         additionalNotes: data.additionalNotes || "",
         trailers: Object.entries(partsByTrailer).map(
-          ([trailerNumber, { isTransload, parts }]): FormTrailer => ({
+          ([trailerNumber, { parts }]): FormTrailer => ({
             trailerNumber,
-            isTransload: isTransload || false,
             parts,
           })
         ),
@@ -317,7 +316,6 @@ export default function RequestDetail({ id }: RequestDetailProps) {
         ...editForm.trailers,
         {
           trailerNumber: "",
-          isTransload: false,
           parts: [{ partNumber: "", quantity: 0 }],
         },
       ],
@@ -526,25 +524,6 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                           required
                           placeholder="Enter trailer number"
                         />
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={trailer.isTransload}
-                            onChange={(e) => {
-                              const newTrailers = [...editForm.trailers];
-                              newTrailers[trailerIndex] = {
-                                ...newTrailers[trailerIndex],
-                                isTransload: e.target.checked,
-                              };
-                              setEditForm({
-                                ...editForm,
-                                trailers: newTrailers,
-                              });
-                            }}
-                            className="h-4 w-4 border-gray-300 rounded text-primary focus:ring-primary"
-                          />
-                          <Label>Is this a transload trailer?</Label>
-                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-2">

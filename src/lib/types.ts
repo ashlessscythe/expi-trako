@@ -89,8 +89,8 @@ export interface FormPart {
 
 export interface FormTrailer {
   trailerNumber: string;
-  isTransload: boolean;
   parts: FormPart[];
+  isTransload?: boolean;
 }
 
 export interface FormData {

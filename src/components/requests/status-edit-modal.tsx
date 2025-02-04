@@ -24,6 +24,7 @@ interface StatusEditModalProps {
     id: string;
     trailer: { trailerNumber: string };
     status: ItemStatus;
+    isTransload: boolean;
   }>;
   parts: Array<{
     id: string;
@@ -54,6 +55,17 @@ export default function StatusEditModal({
       {}
     )
   );
+  const [trailerTransloads, setTrailerTransloads] = useState<
+    Record<string, boolean>
+  >(
+    trailers.reduce(
+      (acc, trailer) => ({
+        ...acc,
+        [trailer.id]: trailer.isTransload || false,
+      }),
+      {}
+    )
+  );
   const [partStatuses, setPartStatuses] = useState<Record<string, ItemStatus>>(
     parts.reduce(
       (acc, part) => ({
@@ -76,6 +88,7 @@ export default function StatusEditModal({
         body: JSON.stringify({
           trailerStatuses,
           partStatuses,
+          trailerTransloads,
         }),
       });
 
@@ -113,9 +126,25 @@ export default function StatusEditModal({
             <h3 className="text-lg font-medium">Trailers</h3>
             {trailers.map((trailer) => (
               <div key={trailer.id} className="flex items-center gap-4">
-                <span className="min-w-[200px]">
-                  Trailer: {trailer.trailer.trailerNumber}
-                </span>
+                <div className="flex flex-col min-w-[200px] gap-2">
+                  <span>Trailer: {trailer.trailer.trailerNumber}</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={trailerTransloads[trailer.id]}
+                      onChange={(e) =>
+                        setTrailerTransloads((prev) => ({
+                          ...prev,
+                          [trailer.id]: e.target.checked,
+                        }))
+                      }
+                      className="h-4 w-4 border-gray-300 rounded text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm">
+                      Is this a transload trailer?
+                    </span>
+                  </div>
+                </div>
                 <Select
                   value={trailerStatuses[trailer.id]}
                   onValueChange={(value: ItemStatus) =>
