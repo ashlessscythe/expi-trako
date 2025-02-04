@@ -3,31 +3,31 @@
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
-interface ViewToggleProps {
-  onToggle: (showAll: boolean) => void;
-  initialShowAll?: boolean;
+interface StatusToggleProps {
+  onToggle: (hideCompleted: boolean) => void;
+  initialHideCompleted?: boolean;
 }
 
-export function ViewToggle({
+export function StatusToggle({
   onToggle,
-  initialShowAll = false,
-}: ViewToggleProps) {
-  const [showAll, setShowAll] = useState(initialShowAll);
+  initialHideCompleted = false,
+}: StatusToggleProps) {
+  const [hideCompleted, setHideCompleted] = useState(initialHideCompleted);
 
   // Load preference from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem("requestsViewAll");
+    const stored = localStorage.getItem("requestsHideCompleted");
     if (stored !== null) {
       const storedValue = stored === "true";
-      setShowAll(storedValue);
+      setHideCompleted(storedValue);
       onToggle(storedValue);
     }
   }, [onToggle]);
 
   const handleToggle = () => {
-    const newValue = !showAll;
-    setShowAll(newValue);
-    localStorage.setItem("requestsViewAll", String(newValue));
+    const newValue = !hideCompleted;
+    setHideCompleted(newValue);
+    localStorage.setItem("requestsHideCompleted", String(newValue));
     onToggle(newValue);
   };
 
@@ -37,7 +37,7 @@ export function ViewToggle({
       onClick={handleToggle}
       className="bg-pink-600 hover:bg-pink-900 text-white font-semibold px-6 h-10 rounded-md shadow-lg"
     >
-      {showAll ? "Show My Requests" : "Show All Requests"}
+      {hideCompleted ? "Show All Statuses" : "Hide Completed"}
     </Button>
   );
 }

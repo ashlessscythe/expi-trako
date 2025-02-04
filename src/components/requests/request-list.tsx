@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { StatusToggle } from "@/components/requests/status-toggle";
 import {
   Table,
   TableBody,
@@ -114,6 +115,7 @@ export default function RequestList({
   const [plantFilter, setPlantFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [hideCompleted, setHideCompleted] = useState(false);
 
   // Sort states
   const [sortField, setSortField] = useState<SortField>("createdAt");
@@ -133,6 +135,13 @@ export default function RequestList({
   const filteredAndSortedRequests = useMemo(() => {
     return requests
       .filter((request) => {
+        // Hide completed/cancelled/rejected if toggle is on
+        if (hideCompleted) {
+          if (["COMPLETED", "CANCELLED", "REJECTED"].includes(request.status)) {
+            return false;
+          }
+        }
+
         const matchesStatus =
           statusFilter === "ALL" || request.status === statusFilter;
         const matchesPlant =
@@ -185,6 +194,7 @@ export default function RequestList({
     dateRange,
     sortField,
     sortDirection,
+    hideCompleted,
   ]);
 
   // Auto-refresh functionality
@@ -205,13 +215,14 @@ export default function RequestList({
     setPlantFilter("all");
     setSearchQuery("");
     setDateRange({ start: "", end: "" });
+    setHideCompleted(false);
   };
 
   const downloadTransloadCSV = async () => {
     try {
       const response = await fetch("/api/transloads");
       if (!response.ok) throw new Error("Failed to download CSV");
-  
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -545,28 +556,38 @@ export default function RequestList({
             />
           </div>
         </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={clearFilters} className="text-sm">
-            Clear Filters
-          </Button>
-          {(user?.role === "ADMIN" || user?.role === "REPORT_RUNNER") && (
-            <>
-              <Button
-                variant="outline"
-                onClick={downloadAsCSV}
-                className="text-sm"
-              >
-                Download CSV
-              </Button>
-              <Button
-                variant="outline"
-                onClick={downloadTransloadCSV}
-                className="text-sm"
-              >
-                Download Transloads
-              </Button>
-            </>
-          )}
+        <div className="flex justify-between items-center">
+          <StatusToggle
+            onToggle={setHideCompleted}
+            initialHideCompleted={false}
+          />
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={clearFilters}
+              className="text-sm"
+            >
+              Clear Filters
+            </Button>
+            {(user?.role === "ADMIN" || user?.role === "REPORT_RUNNER") && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={downloadAsCSV}
+                  className="text-sm"
+                >
+                  Download CSV
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={downloadTransloadCSV}
+                  className="text-sm"
+                >
+                  Download Transloads
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -671,7 +692,7 @@ export default function RequestList({
                       </span>
                     </TableCell>
                     <TableCell>
-                      {new Date(request.createdAt).toLocaleString()}
+                      {new Date(request.createdAt).toISOString().split("T")[0]}
                     </TableCell>
                     {showActions && user?.role === "ADMIN" && (
                       <TableCell>

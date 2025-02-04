@@ -63,7 +63,7 @@ export function UsersTable({ users, onRoleChange }: UsersTableProps) {
                 />
               </TableCell>
               <TableCell>
-                {new Date(user.createdAt).toLocaleDateString()}
+                {new Date(user.createdAt).toISOString().split("T")[0]}
               </TableCell>
               <TableCell>
                 <UserEditModal user={user} onUpdate={handleUpdate} />
