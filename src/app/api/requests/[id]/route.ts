@@ -447,6 +447,25 @@ export async function PATCH(
 
     // Update the request in a transaction
     const updatedRequest = await prisma.$transaction(async (tx) => {
+      // Get existing statuses before deletion
+      const existingTrailers = await tx.requestTrailer.findMany({
+        where: { requestId: params.id },
+        select: {
+          trailer: { select: { trailerNumber: true } },
+          status: true,
+          isTransload: true,
+        },
+      });
+
+      const existingParts = await tx.partDetail.findMany({
+        where: { requestId: params.id },
+        select: {
+          partNumber: true,
+          trailer: { select: { trailerNumber: true } },
+          status: true,
+        },
+      });
+
       // Delete existing trailers and parts
       await tx.requestTrailer.deleteMany({
         where: { requestId: params.id },
@@ -498,25 +517,39 @@ export async function PATCH(
           update: {},
         });
 
+        // Find existing trailer status
+        const existingTrailer = existingTrailers.find(
+          (t) => t.trailer.trailerNumber === trailerData.trailerNumber
+        );
+
         await tx.requestTrailer.create({
           data: {
             request: { connect: { id: request.id } },
             trailer: { connect: { id: trailer.id } },
-            isTransload: false,
+            status: existingTrailer?.status || "PENDING",
+            isTransload: existingTrailer?.isTransload || false,
           },
         });
 
         await Promise.all(
-          trailerData.parts.map((part: Part) =>
-            tx.partDetail.create({
+          trailerData.parts.map((part: Part) => {
+            // Find existing part status
+            const existingPart = existingParts.find(
+              (p) =>
+                p.partNumber === part.partNumber &&
+                p.trailer.trailerNumber === trailerData.trailerNumber
+            );
+
+            return tx.partDetail.create({
               data: {
                 partNumber: part.partNumber,
                 quantity: part.quantity,
+                status: existingPart?.status || "PENDING",
                 request: { connect: { id: request.id } },
                 trailer: { connect: { id: trailer.id } },
               },
-            })
-          )
+            });
+          })
         );
       }
 
