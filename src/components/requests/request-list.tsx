@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusToggle } from "@/components/requests/status-toggle";
@@ -104,22 +104,36 @@ export default function RequestList({
   showActions = true,
 }: RequestListProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user } = useAuth();
   const [deleting, setDeleting] = useState<string | null>(null);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState<RequestStatus | "ALL">(
-    "ALL"
+    () => (searchParams.get("status") as RequestStatus | "ALL") || "ALL"
   );
-  const [plantFilter, setPlantFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [dateRange, setDateRange] = useState({ start: "", end: "" });
-  const [hideCompleted, setHideCompleted] = useState(false);
+  const [plantFilter, setPlantFilter] = useState(
+    () => searchParams.get("plant") || "all"
+  );
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get("search") || ""
+  );
+  const [dateRange, setDateRange] = useState(() => ({
+    start: searchParams.get("dateStart") || "",
+    end: searchParams.get("dateEnd") || "",
+  }));
+  const [hideCompleted, setHideCompleted] = useState(
+    () => searchParams.get("hideCompleted") === "true"
+  );
 
   // Sort states
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Get unique plants for filter dropdown
   const uniquePlants = useMemo(() => {
@@ -210,12 +224,59 @@ export default function RequestList({
     return null;
   }
 
+  // Update URL with current filters
+  const updateUrlParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (
+          value === null ||
+          value === "" ||
+          value === "ALL" ||
+          value === "all"
+        ) {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
+
+      // Construct new URL with updated params
+      const newUrl = params.toString()
+        ? `?${params.toString()}`
+        : window.location.pathname;
+      router.replace(newUrl, { scroll: false });
+    },
+    [searchParams, router]
+  );
+
+  // Update URL when filters change
+  useEffect(() => {
+    updateUrlParams({
+      status: statusFilter,
+      plant: plantFilter,
+      search: searchQuery,
+      dateStart: dateRange.start,
+      dateEnd: dateRange.end,
+      hideCompleted: hideCompleted ? "true" : null,
+    });
+  }, [
+    statusFilter,
+    plantFilter,
+    searchQuery,
+    dateRange,
+    hideCompleted,
+    updateUrlParams,
+  ]);
+
   const clearFilters = () => {
     setStatusFilter("ALL");
     setPlantFilter("all");
     setSearchQuery("");
     setDateRange({ start: "", end: "" });
     setHideCompleted(false);
+    // Clear URL params
+    router.replace(window.location.pathname, { scroll: false });
   };
 
   const downloadTransloadCSV = async () => {
@@ -496,6 +557,63 @@ export default function RequestList({
     </Card>
   );
 
+  // Calculate pagination values
+  const totalPages = Math.ceil(filteredAndSortedRequests.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedRequests = filteredAndSortedRequests.slice(
+    startIndex,
+    startIndex + itemsPerPage
+  );
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, plantFilter, searchQuery, dateRange, hideCompleted]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top of the list when page changes
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="flex justify-center items-center gap-2 mt-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </Button>
+        <div className="flex items-center gap-1">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <Button
+              key={page}
+              variant={currentPage === page ? "default" : "outline"}
+              size="sm"
+              onClick={() => handlePageChange(page)}
+              className="w-8"
+            >
+              {page}
+            </Button>
+          ))}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="space-y-4">
@@ -599,7 +717,8 @@ export default function RequestList({
         <>
           {/* Mobile View (Cards) */}
           <div className="md:hidden space-y-4">
-            {filteredAndSortedRequests.map(renderMobileCard)}
+            {paginatedRequests.map(renderMobileCard)}
+            {renderPagination()}
           </div>
 
           {/* Desktop View (Table) */}
@@ -646,7 +765,7 @@ export default function RequestList({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAndSortedRequests.map((request) => (
+                {paginatedRequests.map((request) => (
                   <TableRow
                     key={request.id}
                     className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors duration-150"
@@ -723,6 +842,7 @@ export default function RequestList({
                 ))}
               </TableBody>
             </Table>
+            {renderPagination()}
           </div>
         </>
       )}
