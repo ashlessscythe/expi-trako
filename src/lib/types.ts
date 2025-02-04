@@ -1,4 +1,4 @@
-import { RequestStatus, Role } from "@prisma/client";
+import { RequestStatus, Role, ItemStatus } from "@prisma/client";
 
 export interface SessionUser {
   id: string;
@@ -18,6 +18,7 @@ export interface PartDetail {
   quantity: number;
   requestId: string;
   trailerId: string;
+  status: ItemStatus;
   trailer: {
     id: string;
     trailerNumber: string;
@@ -39,6 +40,7 @@ export interface RequestTrailer {
   id: string;
   requestId: string;
   trailerId: string;
+  status: ItemStatus;
   trailer: Trailer;
   createdAt: string;
   isTransload: boolean;

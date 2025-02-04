@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import StatusEditModal from "./status-edit-modal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -16,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { RequestStatus } from "@prisma/client";
+import { RequestStatus, ItemStatus } from "@prisma/client";
 import { useAuth } from "@/lib/auth-context";
 import { isWarehouse } from "@/lib/auth";
 import type {
@@ -50,6 +51,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
   const [newStatus, setNewStatus] = useState<RequestStatus | "">("");
   const [note, setNote] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [editForm, setEditForm] = useState<FormData>({
     shipmentNumber: "",
     plant: "",
@@ -679,14 +681,18 @@ export default function RequestDetail({ id }: RequestDetailProps) {
             <CardTitle>Status Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-2 items-center">
-              <div>
-                <div className="text-sm text-muted-foreground">Status</div>
-                <Badge className={getStatusBadgeColor(request.status)}>
-                  {request.status.replace("_", " ")}
-                </Badge>
+            <div className="flex gap-2 items-center justify-between">
+              <div className="flex gap-2 items-center">
+                <div>
+                  <div className="text-sm text-muted-foreground">Status</div>
+                  <Badge className={getStatusBadgeColor(request.status)}>
+                    {request.status.replace("_", " ")}
+                  </Badge>
+                </div>
+                {request.deleted && (
+                  <Badge variant="destructive">Deleted</Badge>
+                )}
               </div>
-              {request.deleted && <Badge variant="destructive">Deleted</Badge>}
             </div>
             {request.routeInfo && (
               <div>
@@ -701,7 +707,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
           <CardHeader>
             <CardTitle>Request Information</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-x-8">
+          <CardContent className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-x-8">
             <div>
               <div className="text-sm text-muted-foreground">
                 Shipment Number
@@ -722,6 +728,16 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                 <div className="font-medium">{request.authorizationNumber}</div>
               </div>
             )}
+            <div>
+              {canUpdateStatus && (
+                <Button
+                  variant="default"
+                  onClick={() => setIsStatusModalOpen(true)}
+                >
+                  Edit Status
+                </Button>
+              )}
+            </div>
             <div>
               <div className="text-sm text-muted-foreground">Pallet Count</div>
               <div className="font-medium">{request.palletCount}</div>
@@ -744,6 +760,13 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                         {isTransload && (
                           <Badge variant="secondary">Transload</Badge>
                         )}
+                        <Badge variant="outline">
+                          {request.trailers
+                            .find(
+                              (t) => t.trailer.trailerNumber === trailerNumber
+                            )
+                            ?.status.replace("_", " ") || "PENDING"}
+                        </Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -753,7 +776,14 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                             key={index}
                             className="bg-muted px-2 py-1 rounded flex justify-between"
                           >
-                            <span>{part.partNumber}</span>
+                            <div className="flex items-center gap-2">
+                              <span>{part.partNumber}</span>
+                              <Badge variant="outline">
+                                {request.partDetails
+                                  .find((p) => p.partNumber === part.partNumber)
+                                  ?.status.replace("_", " ") || "PENDING"}
+                              </Badge>
+                            </div>
                             <span className="text-muted-foreground">
                               Qty: {part.quantity}
                             </span>
@@ -868,6 +898,17 @@ export default function RequestDetail({ id }: RequestDetailProps) {
           </CardContent>
         </Card>
       </div>
+
+      {canUpdateStatus && (
+        <StatusEditModal
+          isOpen={isStatusModalOpen}
+          onClose={() => setIsStatusModalOpen(false)}
+          requestId={id}
+          trailers={request.trailers}
+          parts={request.partDetails}
+          onSuccess={fetchRequest}
+        />
+      )}
     </div>
   );
 }
