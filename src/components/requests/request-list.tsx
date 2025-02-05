@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { RequestStatus } from "@prisma/client";
+import { RequestStatus, ItemStatus } from "@prisma/client";
 import { useAuth } from "@/lib/auth-context";
 import { Input } from "@/components/ui/input";
 import {
@@ -63,6 +63,7 @@ interface Request {
       createdAt: string;
       updatedAt: string;
     };
+    status: ItemStatus;
     isTransload: boolean;
     createdAt: string;
   }[];
@@ -70,6 +71,7 @@ interface Request {
     id: string;
     partNumber: string;
     quantity: number;
+    status: ItemStatus;
     requestId: string;
     trailerId: string;
     createdAt: string;
@@ -305,45 +307,130 @@ export default function RequestList({
       "Shipment Number",
       "Plant",
       "Route Info",
-      "Transload Count",
       "Pallet Count",
       "Status",
+      "Trailer Number",
+      "Trailer Status",
+      "Is Transload",
+      "Part Number",
+      "Part Quantity",
+      "Part Status",
       "Created By",
       "Creator Role",
       "Created At",
     ];
 
-    const csvData = filteredAndSortedRequests.map((request) => [
-      request.shipmentNumber,
-      request.plant || "",
-      request.routeInfo || "",
-      Object.values(
-        (request.trailers || [])
-          .filter((t) => t.isTransload)
-          .reduce((acc, trailer) => {
-            // Get date part only from ISO string
-            const date = trailer.createdAt.split("T")[0];
-            if (!acc[date]) {
-              acc[date] = new Set();
-            }
-            acc[date].add(trailer.trailer.trailerNumber);
-            return acc;
-          }, {} as { [date: string]: Set<string> })
-      )
-        .reduce((sum, uniqueTrailers) => sum + uniqueTrailers.size, 0)
-        .toString(),
-      request.palletCount.toString(),
-      request.status,
-      request.creator.name,
-      request.creator.role,
-      new Date(request.createdAt).toLocaleString(),
-    ]);
+    const csvRows: string[][] = [];
+
+    filteredAndSortedRequests.forEach((request) => {
+      // If request has no trailers or parts, add a single row with request info
+      if (request.trailers.length === 0 && request.partDetails.length === 0) {
+        csvRows.push([
+          request.shipmentNumber,
+          request.plant || "",
+          request.routeInfo || "",
+          request.palletCount.toString(),
+          request.status,
+          "", // Empty trailer number
+          "", // Empty trailer status
+          "", // Empty is transload
+          "", // Empty part number
+          "", // Empty part quantity
+          "", // Empty part status
+          request.creator.name,
+          request.creator.role,
+          new Date(request.createdAt).toLocaleString(),
+        ]);
+        return;
+      }
+
+      // Group parts by trailer
+      const trailerParts = request.partDetails.reduce(
+        (acc: { [key: string]: typeof request.partDetails }, part) => {
+          if (!acc[part.trailerId]) {
+            acc[part.trailerId] = [];
+          }
+          acc[part.trailerId].push(part);
+          return acc;
+        },
+        {} as { [key: string]: typeof request.partDetails }
+      );
+
+      // For each trailer, add rows with parts
+      request.trailers.forEach((trailer) => {
+        const parts = trailerParts[trailer.trailerId] || [];
+
+        if (parts.length === 0) {
+          // Add row for trailer without parts
+          csvRows.push([
+            request.shipmentNumber,
+            request.plant || "",
+            request.routeInfo || "",
+            request.palletCount.toString(),
+            request.status,
+            trailer.trailer.trailerNumber,
+            trailer.status,
+            trailer.isTransload ? "Yes" : "No",
+            "", // Empty part number
+            "", // Empty part quantity
+            "", // Empty part status
+            request.creator.name,
+            request.creator.role,
+            new Date(request.createdAt).toLocaleString(),
+          ]);
+        } else {
+          // Add rows for each part in the trailer
+          parts.forEach((part) => {
+            csvRows.push([
+              request.shipmentNumber,
+              request.plant || "",
+              request.routeInfo || "",
+              request.palletCount.toString(),
+              request.status,
+              trailer.trailer.trailerNumber,
+              trailer.status,
+              trailer.isTransload ? "Yes" : "No",
+              part.partNumber,
+              part.quantity.toString(),
+              part.status,
+              request.creator.name,
+              request.creator.role,
+              new Date(request.createdAt).toLocaleString(),
+            ]);
+          });
+        }
+      });
+
+      // Add rows for parts without trailers (if any exist)
+      const partsWithoutTrailers = request.partDetails.filter(
+        (part) => !request.trailers.some((t) => t.trailerId === part.trailerId)
+      );
+
+      partsWithoutTrailers.forEach((part) => {
+        csvRows.push([
+          request.shipmentNumber,
+          request.plant || "",
+          request.routeInfo || "",
+          request.palletCount.toString(),
+          request.status,
+          "", // Empty trailer number
+          "", // Empty trailer status
+          "", // Empty is transload
+          part.partNumber,
+          part.quantity.toString(),
+          part.status,
+          request.creator.name,
+          request.creator.role,
+          new Date(request.createdAt).toLocaleString(),
+        ]);
+      });
+    });
 
     // Add headers as first row
-    csvData.unshift(headers);
+    csvRows.unshift(headers);
 
     // Convert to CSV string
-    const csvString = csvData
+    const csvString = csvRows
       .map((row) => row.map((cell) => `"${cell}"`).join(","))
       .join("\n");
 
