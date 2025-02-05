@@ -167,7 +167,8 @@ export default function RequestList({
             .includes(searchQuery.toLowerCase()) ||
           request.creator.name
             .toLowerCase()
-            .includes(searchQuery.toLowerCase());
+            .includes(searchQuery.toLowerCase()) ||
+          request.routeInfo?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesDateRange =
           (!dateRange.start ||
             new Date(request.createdAt) >= new Date(dateRange.start)) &&
@@ -619,7 +620,7 @@ export default function RequestList({
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Input
-            placeholder="Search shipment or creator..."
+            placeholder="Search shipment, route, or creator..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full"
@@ -687,7 +688,9 @@ export default function RequestList({
             >
               Clear Filters
             </Button>
-            {(user?.role === "ADMIN" || user?.role === "REPORT_RUNNER") && (
+            {["ADMIN", "REPORT_RUNNER", "CUSTOMER_SERVICE"].includes(
+              user?.role
+            ) && (
               <>
                 <Button
                   variant="outline"
