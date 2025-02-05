@@ -1,6 +1,10 @@
 // Constants for use in both server and client components
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "MG Trako";
 
+// email from
+export const EMAIL_FROM =
+  process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+
 // Client-side config
 export const config = {
   appName: APP_NAME,

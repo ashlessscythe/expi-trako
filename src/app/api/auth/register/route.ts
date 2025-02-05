@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { Resend } from "resend";
+import { EmailTemplate } from "@/components/email-template";
+import { APP_NAME, EMAIL_FROM } from "@/lib/config";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
   try {
@@ -29,7 +34,7 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    await prisma.user.create({
+    const user = await prisma.user.create({
       data: {
         name,
         email,
@@ -37,6 +42,19 @@ export async function POST(req: Request) {
         role: "PENDING", // Default role for new users
       },
     });
+
+    // Send welcome email
+    try {
+      await resend.emails.send({
+        from: `${APP_NAME} <${EMAIL_FROM}>`,
+        to: email,
+        subject: `Welcome to ${APP_NAME}`,
+        react: EmailTemplate({ firstName: name || "there" }),
+      });
+    } catch (emailError) {
+      console.error("Failed to send welcome email:", emailError);
+      // Continue with registration even if email fails
+    }
 
     return NextResponse.json(
       { message: "User created successfully" },
