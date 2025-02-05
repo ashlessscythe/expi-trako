@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Resend } from "resend";
 import { EmailTemplate } from "@/components/email-template";
-import { APP_NAME, EMAIL_FROM } from "@/lib/config";
+import { APP_NAME, EMAIL_AT } from "@/lib/config";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     // Send welcome email
     try {
       await resend.emails.send({
-        from: `${APP_NAME} <${EMAIL_FROM}>`,
+        from: `${APP_NAME} <onboarding@${EMAIL_AT}>`,
         to: email,
         subject: `Welcome to ${APP_NAME}`,
         react: EmailTemplate({ firstName: name || "there" }),

@@ -8,15 +8,17 @@ datasource db {
 }
 
 model User {
-  id              String          @id @default(cuid())
-  name            String
-  email           String          @unique
-  password        String
-  role            Role
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  mustGoRequests  MustGoRequest[] @relation("CreatedBy")
-  requestLogs     RequestLog[]    @relation("PerformedBy")
+  id                    String          @id @default(cuid())
+  name                  String
+  email                 String          @unique
+  password              String
+  role                  Role
+  resetToken           String?         @unique
+  resetTokenExpires    DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  mustGoRequests       MustGoRequest[] @relation("CreatedBy")
+  requestLogs          RequestLog[]    @relation("PerformedBy")
 }
 
 model MustGoRequest {

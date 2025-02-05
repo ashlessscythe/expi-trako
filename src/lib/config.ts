@@ -2,8 +2,7 @@
 export const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "MG Trako";
 
 // email from
-export const EMAIL_FROM =
-  process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";
+export const EMAIL_AT = process.env.EMAIL_FROM_DOMAIN || "resend.dev";
 
 // Client-side config
 export const config = {

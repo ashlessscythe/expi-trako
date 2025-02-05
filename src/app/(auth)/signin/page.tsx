@@ -82,6 +82,14 @@ export default function SignIn() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <div className="flex justify-end">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-muted-foreground hover:text-primary"
+                >
+                  Forgot password?
+                </Link>
+              </div>
             </div>
             {error && (
               <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
