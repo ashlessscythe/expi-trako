@@ -1,10 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { Resend } from "resend";
 import { PasswordResetEmail } from "@/components/password-reset-email";
 import crypto from "crypto";
 import { APP_NAME, EMAIL_AT } from "@/lib/config";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { sendEmail } from "@/lib/email";
 const BASE_URL = process.env.NEXTAUTH_URL || "http://localhost:3000";
 
 export async function POST(request: Request) {
@@ -39,11 +37,14 @@ export async function POST(request: Request) {
     const resetLink = `${BASE_URL}/reset-password?token=${resetToken}`;
 
     // Send password reset email
-    await resend.emails.send({
+    await sendEmail({
       from: `${APP_NAME} <pw-reset@${EMAIL_AT}>`,
       to: [user.email],
       subject: "Reset Your Password",
-      react: PasswordResetEmail({ resetLink, name: user.name }),
+      react: PasswordResetEmail({
+        resetLink,
+        name: user.name,
+      }) as React.ReactElement,
     });
 
     return Response.json({
