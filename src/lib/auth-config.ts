@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
+import { SESSION_TTL_HOURS, JWT_VERSION } from "./config";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -45,15 +46,22 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    // Note: This only affects new sessions. Existing sessions will retain their original expiration time.
+    // To force all users to get new sessions with this expiration, they would need to log out and log back in.
+    maxAge: Number(SESSION_TTL_HOURS) * 60 * 60, // Convert hours to seconds
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        // Set initial token data
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
         token.role = user.role;
+        token.version = JWT_VERSION;
+      } else if (!token.version || token.version !== JWT_VERSION) {
+        // Force reauth if token version doesn't match current version
+        throw new Error("Token version mismatch");
       }
       return token;
     },
