@@ -50,7 +50,11 @@ export interface PartsTrailerGridProps {
 
 export interface UpdateRequestCardProps {
   currentStatus: RequestStatus;
-  onUpdate: (status: RequestStatus, note: string) => Promise<void>;
+  onUpdate: (
+    status: RequestStatus,
+    note: string,
+    forceComplete?: boolean
+  ) => Promise<{ requiresConfirmation?: boolean } | void>;
   updating: boolean;
 }
 

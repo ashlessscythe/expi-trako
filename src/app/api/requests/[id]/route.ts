@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
-import { RequestStatus } from "@prisma/client";
+import { RequestStatus, ItemStatus } from "@prisma/client";
 import { authOptions } from "@/lib/auth-config";
+import { sendEmail } from "@/lib/email";
+import { RequestCompletedEmail } from "@/components/request-completed-email";
+import { APP_NAME } from "@/lib/config";
+import * as React from "react";
 import type {
   AuthUser,
   SessionUser,
@@ -180,6 +184,40 @@ export async function PATCH(
         updateData.notes = [...(currentRequest.notes || []), note];
       }
 
+      // Check if all items are completed when marking request as completed
+      if (status === RequestStatus.COMPLETED) {
+        const currentRequest = await prisma.mustGoRequest.findUnique({
+          where: { id: params.id },
+          include: {
+            trailers: true,
+            partDetails: true,
+          },
+        });
+
+        if (!currentRequest) {
+          return NextResponse.json(
+            { error: "Request not found" },
+            { status: 404 }
+          );
+        }
+
+        const allItemsCompleted = [
+          ...currentRequest.trailers,
+          ...currentRequest.partDetails,
+        ].every((item) => item.status === ItemStatus.COMPLETED);
+
+        if (!allItemsCompleted && !body.forceComplete) {
+          return NextResponse.json(
+            {
+              error: "Not all items are completed",
+              requiresConfirmation: true,
+              itemsIncomplete: true,
+            },
+            { status: 400 }
+          );
+        }
+      }
+
       const updatedRequest = await prisma.mustGoRequest.update({
         where: { id: params.id },
         data: {
@@ -231,6 +269,44 @@ export async function PATCH(
         id: user.id,
         role: user.role,
       };
+
+      // Check if email notifications are enabled
+      const emailSetting = await prisma.systemSetting.findUnique({
+        where: { key: "sendCompletionEmails" },
+      });
+
+      // Send email notification if enabled and request is marked as completed
+      if (
+        status === RequestStatus.COMPLETED &&
+        updatedRequest.creator &&
+        emailSetting?.value === "true"
+      ) {
+        try {
+          const emailData = {
+            trailers: updatedRequest.trailers.map((t) => ({
+              trailerNumber: t.trailer.trailerNumber,
+              status: t.status,
+            })),
+            parts: updatedRequest.partDetails.map((p) => ({
+              partNumber: p.partNumber,
+              status: p.status,
+            })),
+          };
+
+          await sendEmail({
+            to: [updatedRequest.creator.email],
+            subject: `${APP_NAME} - Shipment #${updatedRequest.shipmentNumber} Completed`,
+            react: React.createElement(RequestCompletedEmail, {
+              firstName: updatedRequest.creator.name?.split(" ")[0] || "User",
+              shipmentNumber: updatedRequest.shipmentNumber,
+              requestDetails: emailData,
+            }),
+          });
+        } catch (emailError) {
+          console.error("Failed to send completion email:", emailError);
+          // Continue with the request even if email fails
+        }
+      }
 
       return NextResponse.json({
         ...updatedRequest,

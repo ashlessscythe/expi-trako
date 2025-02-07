@@ -28,6 +28,10 @@ const argv = yargs(hideBin(process.argv))
     description: "Number of records to generate",
     default: 5,
   })
+  .option("add-request", {
+    type: "number",
+    description: "Number of additional requests to add to existing database",
+  })
   .parse();
 
 const roles = [
@@ -184,7 +188,11 @@ async function main() {
 
   let createdUsers;
 
-  if (argv.clear) {
+  if (argv["add-request"] !== undefined) {
+    // When adding requests, use existing users
+    createdUsers = await prisma.user.findMany();
+    console.log(`Using ${createdUsers.length} existing users for new requests`);
+  } else if (argv.clear) {
     await clearDatabase();
     const { users } = await generateBasicData(argv.count, argv.useFaker);
     // Create users
@@ -212,7 +220,9 @@ async function main() {
 
   // Create must-go requests with trailers and parts
   const requests = [];
-  for (let i = 0; i < argv.count; i++) {
+  const requestCount =
+    argv["add-request"] !== undefined ? argv["add-request"] : argv.count;
+  for (let i = 0; i < requestCount; i++) {
     // Generate 1-3 parts with quantities
     const partCount = faker.number.int({ min: 1, max: 3 });
     const selectedParts = Array.from(
@@ -320,7 +330,7 @@ async function main() {
 
   console.log("Seed completed successfully");
 
-  if (!argv["clear-data"]) {
+  if (!argv["clear-data"] && argv["add-request"] === undefined) {
     console.log("\nDefault user created:");
     console.log("Email: bob@bob.bob");
     console.log("Password: adminpass");

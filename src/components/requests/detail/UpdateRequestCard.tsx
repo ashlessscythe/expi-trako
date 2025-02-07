@@ -10,6 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { RequestStatus } from "@prisma/client";
 import { useState } from "react";
 import { UpdateRequestCardProps } from "./types";
@@ -21,13 +27,43 @@ export function UpdateRequestCard({
 }: UpdateRequestCardProps) {
   const [newStatus, setNewStatus] = useState<RequestStatus | "">(currentStatus);
   const [note, setNote] = useState("");
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingUpdate, setPendingUpdate] = useState<{
+    status: RequestStatus;
+    note: string;
+  } | null>(null);
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (forceComplete?: boolean) => {
     if (!note && !newStatus) return;
     if (newStatus === currentStatus && !note) return;
 
-    await onUpdate(newStatus as RequestStatus, note);
-    setNote("");
+    try {
+      const result = await onUpdate(
+        newStatus as RequestStatus,
+        note,
+        forceComplete
+      );
+      if (result?.requiresConfirmation) {
+        setPendingUpdate({
+          status: newStatus as RequestStatus,
+          note,
+        });
+        setShowConfirmation(true);
+        return;
+      }
+      setNote("");
+      setPendingUpdate(null);
+      setShowConfirmation(false);
+    } catch (error) {
+      // Let the parent component handle other errors
+      throw error;
+    }
+  };
+
+  const handleConfirmUpdate = async () => {
+    if (pendingUpdate) {
+      await handleUpdate(true);
+    }
   };
 
   return (
@@ -68,7 +104,7 @@ export function UpdateRequestCard({
         </div>
 
         <Button
-          onClick={handleUpdate}
+          onClick={() => handleUpdate()}
           disabled={
             updating || (!note && (!newStatus || newStatus === currentStatus))
           }
@@ -77,6 +113,40 @@ export function UpdateRequestCard({
           {updating ? "Updating..." : "Update Request"}
         </Button>
       </CardContent>
+      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Force Complete?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>
+              Not all items are marked as completed. Do you want to force
+              complete this request anyway?
+            </p>
+          </div>
+          <div className="flex justify-end gap-4">
+            <Button
+              variant="outline"
+              onClick={(e) => {
+                e.preventDefault();
+                setShowConfirmation(false);
+                setNewStatus(currentStatus);
+                setPendingUpdate(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmUpdate();
+              }}
+            >
+              Force Complete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

@@ -117,7 +117,11 @@ export default function RequestDetail({ id }: RequestDetailProps) {
     fetchRequest();
   }, [fetchRequest]);
 
-  const handleUpdate = async (status: RequestStatus, note: string) => {
+  const handleUpdate = async (
+    status: RequestStatus,
+    note: string,
+    forceComplete?: boolean
+  ) => {
     if (!note && !status) return;
     if (status === request?.status && !note) return;
 
@@ -131,12 +135,17 @@ export default function RequestDetail({ id }: RequestDetailProps) {
         body: JSON.stringify({
           ...(status !== request?.status && { status }),
           ...(note && { note }),
+          ...(forceComplete !== undefined && { forceComplete }),
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        // Return the error response for confirmation requests
+        if (data.requiresConfirmation && data.itemsIncomplete) {
+          return { requiresConfirmation: true };
+        }
         throw new Error(data.error || "Failed to update request");
       }
 

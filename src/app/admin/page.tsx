@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import prisma from "@/lib/prisma";
+import { EmailSettingsCard } from "@/components/admin/email-settings-card";
 
 async function getAdminStats() {
   const [totalUsers, totalRequests, pendingRequests, completedRequests] =
@@ -59,7 +60,14 @@ export default async function AdminDashboard() {
         </Card>
       </div>
 
-      <div className="mt-8">
+      <div className="mt-8 space-y-8">
+        <div>
+          <h3 className="text-xl font-semibold mb-4">Settings</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <EmailSettingsCard />
+          </div>
+        </div>
+
         <h3 className="text-xl font-semibold mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <a

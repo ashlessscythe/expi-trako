@@ -98,6 +98,11 @@ model RequestLog {
   @@index([performedBy])
 }
 
+model SystemSetting {
+  key   String @id
+  value String
+}
+
 enum ItemStatus {
   PENDING      // The request is new and awaiting processing
   IN_PROGRESS  // The part is actively being expedited
