@@ -106,6 +106,7 @@ model SystemSetting {
 enum ItemStatus {
   PENDING      // The request is new and awaiting processing
   IN_PROGRESS  // The part is actively being expedited
+  IN_TRANSIT   // Trailer or part is in transit
   COMPLETED    // The request has been fulfilled
   CANCELED     // The request was canceled
   ON_HOLD      // The request is temporarily paused

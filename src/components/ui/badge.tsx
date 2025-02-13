@@ -23,6 +23,7 @@ const badgeVariants = cva(
         canceled: "border-red-200 bg-red-100 text-red-800",
         on_hold: "border-cyan-200 bg-cyan-100 text-cyan-800",
         reporting: "border-indigo-200 bg-indigo-100 text-indigo-800",
+        in_transit: "border-orange-200 bg-orange-100 text-orange-800",
       },
     },
     defaultVariants: {

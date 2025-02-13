@@ -59,6 +59,7 @@ const requestStatuses = [
 const itemStatuses = [
   "PENDING",
   "IN_PROGRESS",
+  "IN_TRANSIT",
   "COMPLETED",
   "CANCELED",
   "ON_HOLD",
