@@ -42,7 +42,7 @@ export const RequestCompletedEmail: React.FC<
           fontWeight: "bold",
         }}
       >
-        Shipment #{shipmentNumber} Completed ✅
+        Request #{shipmentNumber} Completed ✅
       </h1>
     </div>
 

@@ -295,7 +295,7 @@ export async function PATCH(
 
           await sendEmail({
             to: [updatedRequest.creator.email],
-            subject: `${APP_NAME} - Shipment #${updatedRequest.shipmentNumber} Completed`,
+            subject: `${APP_NAME} - Request #${updatedRequest.shipmentNumber} Completed`,
             react: React.createElement(RequestCompletedEmail, {
               firstName: updatedRequest.creator.name?.split(" ")[0] || "User",
               shipmentNumber: updatedRequest.shipmentNumber,
