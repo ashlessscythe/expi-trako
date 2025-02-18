@@ -157,7 +157,19 @@ async function clearDataExceptUsers() {
 }
 
 async function generateBasicData(count, useFaker) {
-  // Create default bob user
+  // Create default users
+  const joeUser = {
+    name: "joe",
+    email: "joe@joe.joe",
+    password: await hashPassword("cspass"),
+    role: "CUSTOMER_SERVICE",
+  };
+  const aliceUser = {
+    name: "alice",
+    email: "alice@alice.alice",
+    password: await hashPassword("whpass"),
+    role: "WAREHOUSE",
+  };
   const bobUser = {
     name: "Bob",
     email: "bob@bob.bob",
@@ -181,7 +193,7 @@ async function generateBasicData(count, useFaker) {
     })
   );
 
-  return { users: [bobUser, ...users] };
+  return { users: [joeUser, aliceUser, bobUser, ...users] };
 }
 
 async function main() {

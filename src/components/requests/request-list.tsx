@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, Fragment } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { StatusToggle } from "@/components/requests/status-toggle";
 import {
   Table,
@@ -93,6 +94,56 @@ interface RequestListProps {
   showActions?: boolean;
 }
 
+interface BulkActionBarProps {
+  selectedRequests: string[];
+  onStatusChange: (status: RequestStatus) => Promise<void>;
+  onClearSelection: () => void;
+}
+
+const BulkActionBar = ({ selectedRequests, onStatusChange, onClearSelection }: BulkActionBarProps) => {
+  const [updating, setUpdating] = useState(false);
+
+  const handleStatusChange = async (status: RequestStatus) => {
+    setUpdating(true);
+    try {
+      await onStatusChange(status);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  return (
+    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white dark:bg-slate-900 p-4 rounded-lg shadow-lg border flex items-center gap-4 z-50">
+      <div className="text-sm font-medium">
+        {selectedRequests.length} requests selected
+      </div>
+      <Select
+        disabled={updating}
+        onValueChange={(value) => handleStatusChange(value as RequestStatus)}
+      >
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Change status to..." />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.values(RequestStatus).map((status) => (
+            <SelectItem key={status} value={status}>
+              {status.replace("_", " ")}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onClearSelection}
+        disabled={updating}
+      >
+        Clear Selection
+      </Button>
+    </div>
+  );
+};
+
 type SortField =
   | "shipmentNumber"
   | "plant"
@@ -110,6 +161,7 @@ export default function RequestList({
   const { toast } = useToast();
   const { user } = useAuth();
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState<RequestStatus | "ALL">(
@@ -280,6 +332,45 @@ export default function RequestList({
     setHideCompleted(false);
     // Clear URL params
     router.replace(window.location.pathname, { scroll: false });
+  };
+
+  const handleBulkStatusChange = async (newStatus: RequestStatus) => {
+    try {
+      const response = await fetch("/api/requests/bulk-status", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          requestIds: selectedRequests,
+          status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update statuses");
+      }
+
+      toast({
+        title: "Success",
+        description: `Updated ${selectedRequests.length} requests to ${newStatus.replace("_", " ")}`,
+      });
+
+      setSelectedRequests([]);
+      
+      // Preserve existing search params and add cache buster
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('_', Date.now().toString());
+      router.replace(`${window.location.pathname}?${params.toString()}`);
+      router.refresh();
+    } catch (error) {
+      console.error("Error updating statuses:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update request statuses",
+        variant: "destructive",
+      });
+    }
   };
 
   const downloadTransloadCSV = async () => {
@@ -559,6 +650,19 @@ export default function RequestList({
     <Card key={request.id} className="mb-4">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
+          {showActions && user?.role === "ADMIN" && (
+            <Checkbox
+              checked={selectedRequests.includes(request.id)}
+              onCheckedChange={(checked) => {
+                setSelectedRequests(
+                  checked
+                    ? [...selectedRequests, request.id]
+                    : selectedRequests.filter((id) => id !== request.id)
+                );
+              }}
+              className="mt-1"
+            />
+          )}
           <Link
             href={`/requests/${request.id}`}
             className="text-blue-500 hover:underline"
@@ -814,6 +918,20 @@ export default function RequestList({
             <Table>
               <TableHeader>
                 <TableRow>
+                  {showActions && user?.role === "ADMIN" && (
+                    <TableHead className="w-[30px] pr-0">
+                      <Checkbox
+                        checked={selectedRequests.length === paginatedRequests.length}
+                        onCheckedChange={(checked) => {
+                          setSelectedRequests(
+                            checked
+                              ? paginatedRequests.map((request) => request.id)
+                              : []
+                          );
+                        }}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead
                     onClick={() => handleSort("shipmentNumber")}
                     className="cursor-pointer"
@@ -858,6 +976,20 @@ export default function RequestList({
                     key={request.id}
                     className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors duration-150"
                   >
+                    {showActions && user?.role === "ADMIN" && (
+                      <TableCell className="pr-0">
+                        <Checkbox
+                          checked={selectedRequests.includes(request.id)}
+                          onCheckedChange={(checked) => {
+                            setSelectedRequests(
+                              checked
+                                ? [...selectedRequests, request.id]
+                                : selectedRequests.filter((id) => id !== request.id)
+                            );
+                          }}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>
                       <Link
                         href={`/requests/${request.id}`}
@@ -880,10 +1012,7 @@ export default function RequestList({
                             acc[date].add(trailer.trailer.trailerNumber);
                             return acc;
                           }, {} as { [date: string]: Set<string> })
-                      ).reduce(
-                        (sum, uniqueTrailers) => sum + uniqueTrailers.size,
-                        0
-                      )}
+                      ).reduce((sum, uniqueTrailers) => sum + uniqueTrailers.size, 0)}
                     </TableCell>
                     <TableCell>{request.palletCount}</TableCell>
                     <TableCell>
@@ -910,9 +1039,7 @@ export default function RequestList({
                             onClick={() => handleUndelete(request.id)}
                             disabled={deleting === request.id}
                           >
-                            {deleting === request.id
-                              ? "Restoring..."
-                              : "Restore"}
+                            {deleting === request.id ? "Restoring..." : "Restore"}
                           </Button>
                         ) : (
                           <Button
@@ -933,6 +1060,13 @@ export default function RequestList({
             {renderPagination()}
           </div>
         </>
+      )}
+      {showActions && user?.role === "ADMIN" && selectedRequests.length > 0 && (
+        <BulkActionBar
+          selectedRequests={selectedRequests}
+          onStatusChange={handleBulkStatusChange}
+          onClearSelection={() => setSelectedRequests([])}
+        />
       )}
     </div>
   );
