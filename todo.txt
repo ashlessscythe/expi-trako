@@ -57,6 +57,7 @@ Frontend:
   - [X] Sortable columns.
   - [X] Status filters.
   - [X] Warehouse actions.
+  - [X] Fix bulk update URL handling to prevent redirect to root path.
 
 - [X] Create request detail view (`/requests/[id]`)
   - [X] Display full request info.

@@ -153,7 +153,7 @@ type SortField =
 type SortDirection = "asc" | "desc";
 
 export default function RequestList({
-  requests = [],
+  requests: initialRequests = [],
   showActions = true,
 }: RequestListProps) {
   const router = useRouter();
@@ -162,6 +162,12 @@ export default function RequestList({
   const { user } = useAuth();
   const [deleting, setDeleting] = useState<string | null>(null);
   const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
+  const [requests, setRequests] = useState<Request[]>(initialRequests);
+
+  // Update local state when prop changes
+  useEffect(() => {
+    setRequests(initialRequests);
+  }, [initialRequests]);
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState<RequestStatus | "ALL">(
@@ -266,14 +272,29 @@ export default function RequestList({
     hideCompleted,
   ]);
 
-  // Auto-refresh functionality
+  // Auto-refresh functionality with shorter interval and data fetching
   useEffect(() => {
-    router.refresh();
+    const fetchAndUpdateRequests = async () => {
+      try {
+        const response = await fetch('/api/requests');
+        if (!response.ok) throw new Error('Failed to fetch requests');
+        const data = await response.json();
+        setRequests(data);
+      } catch (error) {
+        console.error('Error fetching requests:', error);
+      }
+    };
+
+    // Initial fetch
+    fetchAndUpdateRequests();
+    
+    // Set up interval for periodic refresh
     const intervalId = setInterval(() => {
-      router.refresh();
-    }, 30 * 1000);
+      fetchAndUpdateRequests();
+    }, 5 * 1000); // Refresh every 5 seconds
+
     return () => clearInterval(intervalId);
-  }, [router]);
+  }, []);
 
   if (!user) {
     return null;
@@ -335,7 +356,17 @@ export default function RequestList({
   };
 
   const handleBulkStatusChange = async (newStatus: RequestStatus) => {
+    // Store previous state for rollback
+    const previousRequests = requests;
+    
     try {
+      // Optimistically update UI
+      setRequests((prevRequests) =>
+        prevRequests.map((req) =>
+          selectedRequests.includes(req.id) ? { ...req, status: newStatus } : req
+        )
+      );
+
       const response = await fetch("/api/requests/bulk-status", {
         method: "PUT",
         headers: {
@@ -358,16 +389,16 @@ export default function RequestList({
 
       setSelectedRequests([]);
       
-      // Preserve existing search params and add cache buster
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('_', Date.now().toString());
-      router.replace(`${window.location.pathname}?${params.toString()}`);
+      // Refresh in background to ensure data consistency
       router.refresh();
     } catch (error) {
+      // Revert to previous state on error
+      setRequests(previousRequests);
+      
       console.error("Error updating statuses:", error);
       toast({
         title: "Error",
-        description: "Failed to update request statuses",
+        description: "Failed to update request statuses. Changes have been reverted.",
         variant: "destructive",
       });
     }
