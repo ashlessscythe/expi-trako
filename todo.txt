@@ -148,3 +148,7 @@ DESIGN REQUIREMENTS:
 - Implement dark/light mode
 - Responsive design
 - Professional UI
+
+BUG FIXES:
+- [X] Fix reports page volume counting to properly group by date
+- [X] Fix reports page transload counting to use non-overlapping date ranges

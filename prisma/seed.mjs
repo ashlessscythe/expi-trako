@@ -28,6 +28,10 @@ const argv = yargs(hideBin(process.argv))
     description: "Number of records to generate",
     default: 5,
   })
+  .option("multiplier", {
+    type: "number",
+    description: "Multiplier for request count (defaults to 5 when count is 10)",
+  })
   .option("add-request", {
     type: "number",
     description: "Number of additional requests to add to existing database",
@@ -73,15 +77,56 @@ const rolePasswords = {
   PENDING: "pendingpass",
 };
 
-// Helper function to generate a random date within the past 2 months
-function generateRecentDate() {
+// Helper function to generate random dates for the specified number of days
+function generateDates(dayCount, maxRequestsPerDay = 5) {
   const now = new Date();
   const twoMonthsAgo = new Date(
     now.getFullYear(),
     now.getMonth() - 2,
     now.getDate()
   );
-  return faker.date.between({ from: twoMonthsAgo, to: now });
+  
+  // Get array of random days
+  const days = [];
+  const totalDays = Math.floor((now - twoMonthsAgo) / (1000 * 60 * 60 * 24));
+  const selectedDays = new Set();
+  
+  while (selectedDays.size < dayCount) {
+    const randomDay = faker.number.int({ min: 0, max: totalDays });
+    selectedDays.add(randomDay);
+  }
+  
+  // For each selected day, generate 1 to maxRequestsPerDay timestamps during business hours
+  const dayRequestCounts = new Map(); // Track requests per day
+  selectedDays.forEach(dayOffset => {
+    const date = new Date(twoMonthsAgo);
+    date.setDate(date.getDate() + dayOffset);
+    
+    // Generate between 1 and maxRequestsPerDay requests for this day
+    const requestCount = faker.number.int({ min: 1, max: maxRequestsPerDay });
+    const dateStr = date.toISOString().split('T')[0];
+    dayRequestCounts.set(dateStr, requestCount);
+    
+    for (let i = 0; i < requestCount; i++) {
+      const hour = faker.number.int({ min: 6, max: 18 });
+      const minute = faker.number.int({ min: 0, max: 59 });
+      const second = faker.number.int({ min: 0, max: 59 });
+      
+      const timestamp = new Date(date);
+      timestamp.setHours(hour, minute, second, 0);
+      days.push(timestamp);
+    }
+  });
+  
+  // Sort chronologically and log request counts
+  console.log("\nRequests per day:");
+  Array.from(dayRequestCounts.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .forEach(([date, count]) => {
+      console.log(`${date}: ${count} requests`);
+    });
+  
+  return days.sort((a, b) => a - b);
 }
 
 // Helper function to generate realistic part number with quantity
@@ -233,9 +278,14 @@ async function main() {
 
   // Create must-go requests with trailers and parts
   const requests = [];
-  const requestCount =
-    argv["add-request"] !== undefined ? argv["add-request"] : argv.count;
-  for (let i = 0; i < requestCount; i++) {
+  
+  // Generate dates for the specified number of days with max requests per day
+  const dayCount = argv["add-request"] !== undefined ? argv["add-request"] : argv.count;
+  const maxRequestsPerDay = argv.multiplier || 5; // Default to 5 requests per day max
+  const dates = generateDates(dayCount, maxRequestsPerDay);
+  
+  // Create requests for each timestamp
+  for (const createdAt of dates) {
     // Generate 1-3 parts with quantities
     const partCount = faker.number.int({ min: 1, max: 3 });
     const selectedParts = Array.from(
@@ -252,8 +302,6 @@ async function main() {
     const noteCount = faker.number.int({ min: 1, max: 3 });
     const selectedNotes = Array.from({ length: noteCount }, generateNote);
 
-    // Generate a date within the past 2 months
-    const createdAt = generateRecentDate();
 
     // Create trailer first
     const trailer = await prisma.trailer.create({
