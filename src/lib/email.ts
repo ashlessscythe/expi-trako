@@ -19,13 +19,10 @@ export async function sendEmail({ to, subject, react, from }: SendEmailParams) {
 
   // If Resend is not initialized, log the email instead of sending
   if (!resend) {
-    console.log("MOCK EMAIL SERVICE (no RESEND_API_KEY set)");
-    console.log("----------------------------------------");
-    console.log("From:", from || defaultFrom);
-    console.log("To:", to.join(", "));
+    // Log minimal information in development mode
+    console.log("[Mock Email] Sending email in development mode");
     console.log("Subject:", subject);
-    console.log("React Component:", "[Component rendered in mock mode]");
-    console.log("----------------------------------------");
+    console.log("Recipients:", to.length);
     return { data: { id: "mock-email-id" }, error: null };
   }
 
@@ -39,7 +36,7 @@ export async function sendEmail({ to, subject, react, from }: SendEmailParams) {
     });
     return { data: result.data, error: null };
   } catch (error) {
-    console.error("Failed to send email:", error);
+    console.error("Failed to send email. Check server logs for details.");
     return { data: null, error };
   }
 }

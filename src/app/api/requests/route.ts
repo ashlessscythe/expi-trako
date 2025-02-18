@@ -16,7 +16,6 @@ export async function GET(req: Request) {
     }
 
     const user = session.user as SessionUser;
-    console.log("User role:", user.role);
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
@@ -108,7 +107,7 @@ export async function GET(req: Request) {
     );
     return response;
   } catch (error) {
-    console.error("Error fetching requests:", error);
+    console.error("Failed to fetch requests");
     return NextResponse.json(
       { error: "Failed to fetch requests" },
       { status: 500 }
@@ -300,7 +299,7 @@ export async function POST(req: Request) {
     );
     return response;
   } catch (error) {
-    console.error("Error in POST:", error);
+    console.error("Failed to create request");
     return NextResponse.json(
       { error: "Failed to create request" },
       { status: 500 }

@@ -117,7 +117,7 @@ export async function GET(
       canEdit,
     });
   } catch (error) {
-    console.error("Error fetching request:", error);
+    console.error("Failed to fetch request");
     return NextResponse.json(
       { error: "Failed to fetch request" },
       { status: 500 }
@@ -303,7 +303,7 @@ export async function PATCH(
             }),
           });
         } catch (emailError) {
-          console.error("Failed to send completion email:", emailError);
+          console.error("Failed to send completion notification");
           // Continue with the request even if email fails
         }
       }
@@ -685,7 +685,7 @@ export async function PATCH(
     ) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
-    console.error("Error updating request:", error);
+    console.error("Failed to update request");
     return NextResponse.json(
       { error: "Failed to update request" },
       { status: 500 }
@@ -736,7 +736,7 @@ export async function DELETE(
 
     return NextResponse.json(deletedRequest);
   } catch (error) {
-    console.error("Error deleting request:", error);
+    console.error("Failed to delete request");
     return NextResponse.json(
       { error: "Failed to delete request" },
       { status: 500 }

@@ -34,7 +34,7 @@ export async function GET() {
       sendCompletionEmails: setting?.value === "true",
     });
   } catch (error) {
-    console.error("Error fetching email settings:", error);
+    console.error("Failed to fetch email settings");
     return NextResponse.json(
       { error: "Failed to fetch email settings" },
       { status: 500 }
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error updating email settings:", error);
+    console.error("Failed to update email settings");
     return NextResponse.json(
       { error: "Failed to update email settings" },
       { status: 500 }

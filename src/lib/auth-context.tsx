@@ -28,12 +28,6 @@ export function useAuth() {
     router.push("/");
   };
 
-  // Debug session
-  console.log("Auth context session:", {
-    session,
-    sessionUser: session?.user,
-  });
-
   // Ensure we return a properly typed user
   const user = session?.user
     ? {

@@ -302,7 +302,7 @@ async function processRows(
 
       result.successfulRows++;
     } catch (error) {
-      console.error("Error processing row:", error);
+      console.error("Failed to process row");
       result.failedRows++;
       result.errors.push({
         row: i + 1,
@@ -384,7 +384,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Bulk upload error:", error);
+    console.error("Failed to process bulk upload");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

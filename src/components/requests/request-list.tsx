@@ -281,7 +281,7 @@ export default function RequestList({
         const data = await response.json();
         setRequests(data);
       } catch (error) {
-        console.error('Error fetching requests:', error);
+        // Silent fail - error shown to user via UI
       }
     };
 
@@ -395,7 +395,7 @@ export default function RequestList({
       // Revert to previous state on error
       setRequests(previousRequests);
       
-      console.error("Error updating statuses:", error);
+      // Silent fail - error shown to user via UI
       toast({
         title: "Error",
         description: "Failed to update request statuses. Changes have been reverted.",
@@ -419,7 +419,7 @@ export default function RequestList({
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Error downloading CSV:", error);
+      // Silent fail - error shown to user via UI
     }
   };
 

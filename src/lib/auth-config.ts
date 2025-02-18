@@ -73,17 +73,11 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as Role;
       }
 
-      // Debug session construction
-      // console.log("Session construction:", {
-      //   token,
-      //   sessionUser: session.user,
-      // });
-
       return session;
     },
   },
   pages: {
     signIn: "/",
   },
-  debug: true,
+  debug: false, // Disable debug logging for security
 };
