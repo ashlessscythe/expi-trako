@@ -13,6 +13,17 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth-config";
 import { Header } from "@/components/header";
 import { StatusChart, TransloadChart, VolumeChart } from "@/components/reports/charts";
+import { DateRange } from "@/components/reports/date-range";
+
+// Add searchParams for date ranges
+export interface PageProps {
+  searchParams: {
+    volumeStart?: string;
+    volumeEnd?: string;
+    transloadStart?: string;
+    transloadEnd?: string;
+  };
+}
 
 interface DailyRequestCount {
   date: Date;
@@ -20,19 +31,22 @@ interface DailyRequestCount {
 }
 
 
-async function getReportData() {
+async function getReportData(dateRanges: {
+  volumeStart?: string;
+  volumeEnd?: string;
+  transloadStart?: string;
+  transloadEnd?: string;
+}) {
+  // Default to last 30 days if no dates provided
   const now = new Date();
-  const lastDay = new Date();
-  lastDay.setDate(now.getDate() - 1);
+  const defaultStart = new Date();
+  defaultStart.setDate(now.getDate() - 30);
 
-  const last3Days = new Date();
-  last3Days.setDate(now.getDate() - 3);
-
-  const lastWeek = new Date();
-  lastWeek.setDate(now.getDate() - 7);
-
-  const lastMonth = new Date();
-  lastMonth.setDate(now.getDate() - 30);
+  // Parse date ranges with fallbacks
+  const volumeStart = dateRanges.volumeStart ? new Date(dateRanges.volumeStart) : defaultStart;
+  const volumeEnd = dateRanges.volumeEnd ? new Date(dateRanges.volumeEnd) : now;
+  const transloadStart = dateRanges.transloadStart ? new Date(dateRanges.transloadStart) : defaultStart;
+  const transloadEnd = dateRanges.transloadEnd ? new Date(dateRanges.transloadEnd) : now;
 
   const [recentRequests, userStats, statusDistribution, transloadTrailers, dailyRequests] = await Promise.all([
     prisma.mustGoRequest.findMany({
@@ -57,7 +71,7 @@ async function getReportData() {
     prisma.$queryRaw<DailyRequestCount[]>`
       SELECT DATE("createdAt") as date, COUNT(*) as count 
       FROM "MustGoRequest" 
-      WHERE "createdAt" >= ${lastMonth}
+      WHERE "createdAt" >= ${volumeStart} AND "createdAt" <= ${volumeEnd}
       GROUP BY DATE("createdAt")
       ORDER BY date ASC
     `
@@ -69,12 +83,10 @@ async function getReportData() {
     count: Number(day.count)
   }));
 
-  // Categorize transloads by time range with proper date ranges
-  const transloadStats = {
-    lastDay: transloadTrailers.filter((t) => new Date(t.createdAt) >= lastDay && new Date(t.createdAt) < now),
-    last3Days: transloadTrailers.filter((t) => new Date(t.createdAt) >= last3Days && new Date(t.createdAt) < lastDay),
-    lastWeek: transloadTrailers.filter((t) => new Date(t.createdAt) >= lastWeek && new Date(t.createdAt) < last3Days),
-  };
+  // Filter transloads by selected date range
+  const filteredTransloads = transloadTrailers.filter(
+    (t) => new Date(t.createdAt) >= transloadStart && new Date(t.createdAt) <= transloadEnd
+  );
 
   // Process status data for pie chart
   const statusData = statusDistribution.map(status => ({
@@ -82,24 +94,28 @@ async function getReportData() {
     value: status._count,
   }));
 
-  // Process transload data for bar chart
-  const transloadData = [
-    { period: 'Last 24h', count: transloadStats.lastDay.length },
-    { period: 'Last 3d', count: transloadStats.last3Days.length },
-    { period: 'Last 7d', count: transloadStats.lastWeek.length },
-  ];
+  // Process transload data - group by day
+  const transloadByDay = filteredTransloads.reduce((acc, curr) => {
+    const date = new Date(curr.createdAt).toISOString().split('T')[0];
+    acc[date] = (acc[date] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const transloadData = Object.entries(transloadByDay).map(([date, count]) => ({
+    period: date,
+    count,
+  })).sort((a, b) => a.period.localeCompare(b.period));
 
   return { 
     recentRequests, 
     userStats, 
     statusData, 
     transloadData,
-    dailyRequestData,
-    transloadStats 
+    dailyRequestData
   };
 }
 
-export default async function ReportsPage() {
+export default async function ReportsPage({ searchParams }: PageProps) {
   const session = await getServerSession(authOptions);
 
   // Only allow ADMIN and REPORT_RUNNER to access this page
@@ -110,8 +126,19 @@ export default async function ReportsPage() {
     redirect("/");
   }
 
-  const { recentRequests, userStats, statusData, transloadData, dailyRequestData, transloadStats } =
-    await getReportData();
+  const { recentRequests, userStats, statusData, transloadData, dailyRequestData } =
+    await getReportData({
+      volumeStart: searchParams.volumeStart,
+      volumeEnd: searchParams.volumeEnd,
+      transloadStart: searchParams.transloadStart,
+      transloadEnd: searchParams.transloadEnd,
+    });
+
+  // Format date for input default value
+  const defaultStart = new Date();
+  defaultStart.setDate(defaultStart.getDate() - 30);
+  const defaultStartStr = defaultStart.toISOString().split('T')[0];
+  const defaultEndStr = new Date().toISOString().split('T')[0];
 
   return (
     <>
@@ -152,7 +179,17 @@ export default async function ReportsPage() {
 
           {/* Request Volume Over Time */}
           <Card className="p-4">
-            <h3 className="text-lg font-medium mb-4">Request Volume (30 Days)</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Request Volume</h3>
+              <DateRange
+                startDate={searchParams.volumeStart}
+                endDate={searchParams.volumeEnd}
+                defaultStartDate={defaultStartStr}
+                defaultEndDate={defaultEndStr}
+                startParam="volumeStart"
+                endParam="volumeEnd"
+              />
+            </div>
             <div className="h-[300px]">
                 <VolumeChart data={dailyRequestData} />
             </div>
@@ -160,7 +197,17 @@ export default async function ReportsPage() {
 
           {/* Transload Trailer Bar Chart */}
           <Card className="p-4">
-            <h3 className="text-lg font-medium mb-4">Transload Trailers by Period</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">Transload Trailers</h3>
+              <DateRange
+                startDate={searchParams.transloadStart}
+                endDate={searchParams.transloadEnd}
+                defaultStartDate={defaultStartStr}
+                defaultEndDate={defaultEndStr}
+                startParam="transloadStart"
+                endParam="transloadEnd"
+              />
+            </div>
             <div className="h-[300px]">
                 <TransloadChart data={transloadData} />
             </div>

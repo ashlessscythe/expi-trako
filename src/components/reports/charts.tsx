@@ -91,6 +91,7 @@ export function TransloadChart({ data }: TransloadChartProps) {
         <XAxis 
           dataKey="period"
           tickLine={false}
+          tickFormatter={(value) => value.slice(5)} // Show only MM-DD
         />
         <YAxis tickLine={false} />
         <Bar 

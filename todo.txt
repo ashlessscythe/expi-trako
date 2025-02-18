@@ -152,3 +152,4 @@ DESIGN REQUIREMENTS:
 BUG FIXES:
 - [X] Fix reports page volume counting to properly group by date
 - [X] Fix reports page transload counting to use non-overlapping date ranges
+- [X] Add date range selection for volume and transload reports
