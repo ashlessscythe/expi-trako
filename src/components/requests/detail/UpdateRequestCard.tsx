@@ -32,6 +32,7 @@ export function UpdateRequestCard({
     status: RequestStatus;
     note: string;
   } | null>(null);
+  const [forceCompleting, setForceCompleting] = useState(false);
 
   const handleUpdate = async (forceComplete?: boolean) => {
     if (!note && !newStatus) return;
@@ -62,7 +63,13 @@ export function UpdateRequestCard({
 
   const handleConfirmUpdate = async () => {
     if (pendingUpdate) {
-      await handleUpdate(true);
+      try {
+        setForceCompleting(true);
+        await handleUpdate(true);
+      } catch (error) {
+        setForceCompleting(false);
+        throw error;
+      }
     }
   };
 
@@ -141,6 +148,7 @@ export function UpdateRequestCard({
                 e.preventDefault();
                 handleConfirmUpdate();
               }}
+              disabled={forceCompleting}
             >
               Force Complete
             </Button>

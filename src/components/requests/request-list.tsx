@@ -94,55 +94,7 @@ interface RequestListProps {
   showActions?: boolean;
 }
 
-interface BulkActionBarProps {
-  selectedRequests: string[];
-  onStatusChange: (status: RequestStatus) => Promise<void>;
-  onClearSelection: () => void;
-}
-
-const BulkActionBar = ({ selectedRequests, onStatusChange, onClearSelection }: BulkActionBarProps) => {
-  const [updating, setUpdating] = useState(false);
-
-  const handleStatusChange = async (status: RequestStatus) => {
-    setUpdating(true);
-    try {
-      await onStatusChange(status);
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  return (
-    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white dark:bg-slate-900 p-4 rounded-lg shadow-lg border flex items-center gap-4 z-50">
-      <div className="text-sm font-medium">
-        {selectedRequests.length} requests selected
-      </div>
-      <Select
-        disabled={updating}
-        onValueChange={(value) => handleStatusChange(value as RequestStatus)}
-      >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Change status to..." />
-        </SelectTrigger>
-        <SelectContent>
-          {Object.values(RequestStatus).map((status) => (
-            <SelectItem key={status} value={status}>
-              {status.replace("_", " ")}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onClearSelection}
-        disabled={updating}
-      >
-        Clear Selection
-      </Button>
-    </div>
-  );
-};
+import { BulkActionBar } from "./bulk-action-bar";
 
 type SortField =
   | "shipmentNumber"
@@ -276,8 +228,8 @@ export default function RequestList({
   useEffect(() => {
     const fetchAndUpdateRequests = async () => {
       try {
-        const response = await fetch('/api/requests');
-        if (!response.ok) throw new Error('Failed to fetch requests');
+        const response = await fetch("/api/requests");
+        if (!response.ok) throw new Error("Failed to fetch requests");
         const data = await response.json();
         setRequests(data);
       } catch (error) {
@@ -287,7 +239,7 @@ export default function RequestList({
 
     // Initial fetch
     fetchAndUpdateRequests();
-    
+
     // Set up interval for periodic refresh
     const intervalId = setInterval(() => {
       fetchAndUpdateRequests();
@@ -355,53 +307,16 @@ export default function RequestList({
     router.replace(window.location.pathname, { scroll: false });
   };
 
-  const handleBulkStatusChange = async (newStatus: RequestStatus) => {
-    // Store previous state for rollback
-    const previousRequests = requests;
-    
-    try {
-      // Optimistically update UI
-      setRequests((prevRequests) =>
-        prevRequests.map((req) =>
-          selectedRequests.includes(req.id) ? { ...req, status: newStatus } : req
-        )
-      );
-
-      const response = await fetch("/api/requests/bulk-status", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          requestIds: selectedRequests,
-          status: newStatus,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to update statuses");
-      }
-
-      toast({
-        title: "Success",
-        description: `Updated ${selectedRequests.length} requests to ${newStatus.replace("_", " ")}`,
-      });
-
-      setSelectedRequests([]);
-      
-      // Refresh in background to ensure data consistency
-      router.refresh();
-    } catch (error) {
-      // Revert to previous state on error
-      setRequests(previousRequests);
-      
-      // Silent fail - error shown to user via UI
-      toast({
-        title: "Error",
-        description: "Failed to update request statuses. Changes have been reverted.",
-        variant: "destructive",
-      });
-    }
+  const handleBulkStatusChange = (newStatus: RequestStatus) => {
+    // Optimistically update UI
+    setRequests((prevRequests) =>
+      prevRequests.map((req) =>
+        selectedRequests.includes(req.id) ? { ...req, status: newStatus } : req
+      )
+    );
+    setSelectedRequests([]);
+    // Refresh in background to ensure data consistency
+    router.refresh();
   };
 
   const downloadTransloadCSV = async () => {
@@ -952,7 +867,9 @@ export default function RequestList({
                   {showActions && user?.role === "ADMIN" && (
                     <TableHead className="w-[30px] pr-0">
                       <Checkbox
-                        checked={selectedRequests.length === paginatedRequests.length}
+                        checked={
+                          selectedRequests.length === paginatedRequests.length
+                        }
                         onCheckedChange={(checked) => {
                           setSelectedRequests(
                             checked
@@ -1015,7 +932,9 @@ export default function RequestList({
                             setSelectedRequests(
                               checked
                                 ? [...selectedRequests, request.id]
-                                : selectedRequests.filter((id) => id !== request.id)
+                                : selectedRequests.filter(
+                                    (id) => id !== request.id
+                                  )
                             );
                           }}
                         />
@@ -1043,7 +962,10 @@ export default function RequestList({
                             acc[date].add(trailer.trailer.trailerNumber);
                             return acc;
                           }, {} as { [date: string]: Set<string> })
-                      ).reduce((sum, uniqueTrailers) => sum + uniqueTrailers.size, 0)}
+                      ).reduce(
+                        (sum, uniqueTrailers) => sum + uniqueTrailers.size,
+                        0
+                      )}
                     </TableCell>
                     <TableCell>{request.palletCount}</TableCell>
                     <TableCell>
@@ -1070,7 +992,9 @@ export default function RequestList({
                             onClick={() => handleUndelete(request.id)}
                             disabled={deleting === request.id}
                           >
-                            {deleting === request.id ? "Restoring..." : "Restore"}
+                            {deleting === request.id
+                              ? "Restoring..."
+                              : "Restore"}
                           </Button>
                         ) : (
                           <Button
