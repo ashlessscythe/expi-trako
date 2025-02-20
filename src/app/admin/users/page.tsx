@@ -9,6 +9,15 @@ import { RoleChangeEmail } from "@/components/role-change-email";
 async function getUsers() {
   return await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
+    include: {
+      site: {
+        select: {
+          id: true,
+          name: true,
+          locationCode: true,
+        },
+      },
+    },
   });
 }
 
@@ -56,6 +65,11 @@ async function updateUserRole(formData: FormData) {
 }
 
 export default async function UsersPage() {
+  const authUser = await getAuthUser();
+  if (!isAdmin(authUser)) {
+    redirect("/");
+  }
+
   const users = await getUsers();
 
   return (

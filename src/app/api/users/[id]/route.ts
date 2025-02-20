@@ -14,12 +14,13 @@ export async function PATCH(
     }
 
     const data = await request.json();
-    const { name, email, password } = data;
+    const { name, email, password, siteId } = data;
 
     // Prepare update data
     const updateData: any = {
       name,
       email,
+      siteId: siteId || null, // Set to null if empty string or undefined
     };
 
     // Only update password if provided
