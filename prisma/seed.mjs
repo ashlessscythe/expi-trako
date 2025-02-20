@@ -159,11 +159,20 @@ function generatePartWithQuantity() {
   return { partNumber, quantity };
 }
 
-// Helper function to generate trailer number
+// Track used trailer numbers to ensure uniqueness
+const usedTrailerNumbers = new Set();
+
+// Helper function to generate unique trailer number
 function generateTrailerNumber() {
-  const prefix = faker.helpers.arrayElement(["SL", "ST", "B"]);
-  const number = faker.number.int({ min: 10000, max: 99999 });
-  return `${prefix}${number}`;
+  let trailerNumber;
+  do {
+    const prefix = faker.helpers.arrayElement(["SL", "ST", "B"]);
+    const number = faker.number.int({ min: 10000, max: 99999 });
+    trailerNumber = `${prefix}${number}`;
+  } while (usedTrailerNumbers.has(trailerNumber));
+
+  usedTrailerNumbers.add(trailerNumber);
+  return trailerNumber;
 }
 
 // Helper function to generate realistic notes

@@ -202,13 +202,13 @@ export default async function ReportsPage({ searchParams }: PageProps) {
   return (
     <>
       <Header />
-      <div className="container mx-auto py-6">
-        <div className="space-y-8">
+      <div className="container mx-auto py-4 md:py-6 px-4 md:px-6">
+        <div className="space-y-6 md:space-y-8">
           <h2 className="text-2xl font-semibold">System Reports</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {/* User Role Distribution */}
-            <Card className="p-4">
+            <Card className="p-3 md:p-4">
               <h3 className="text-lg font-medium mb-4">
                 User Role Distribution
               </h3>
@@ -226,19 +226,19 @@ export default async function ReportsPage({ searchParams }: PageProps) {
             </Card>
 
             {/* Request Status Distribution Pie Chart */}
-            <Card className="p-4">
+            <Card className="p-3 md:p-4">
               <h3 className="text-lg font-medium mb-4">
                 Request Status Distribution
               </h3>
-              <div className="h-[300px]">
+              <div className="h-[250px] md:h-[300px] w-full">
                 <StatusChart data={statusData} />
               </div>
             </Card>
           </div>
 
           {/* Request Volume Over Time */}
-          <Card className="p-4">
-            <div className="flex justify-between items-center mb-4">
+          <Card className="p-3 md:p-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4">
               <h3 className="text-lg font-medium">Request Volume</h3>
               <DateRange
                 startDate={searchParams.volumeStart}
@@ -249,14 +249,14 @@ export default async function ReportsPage({ searchParams }: PageProps) {
                 endParam="volumeEnd"
               />
             </div>
-            <div className="h-[300px]">
+            <div className="h-[250px] md:h-[300px] w-full">
               <VolumeChart data={dailyRequestData} />
             </div>
           </Card>
 
           {/* Transload Trailer Bar Chart */}
-          <Card className="p-4">
-            <div className="flex justify-between items-center mb-4">
+          <Card className="p-3 md:p-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4">
               <h3 className="text-lg font-medium">Transload Trailers</h3>
               <DateRange
                 startDate={searchParams.transloadStart}
@@ -267,15 +267,15 @@ export default async function ReportsPage({ searchParams }: PageProps) {
                 endParam="transloadEnd"
               />
             </div>
-            <div className="h-[300px]">
+            <div className="h-[250px] md:h-[300px] w-full">
               <TransloadChart data={transloadData} />
             </div>
           </Card>
 
           {/* Recent Requests Table */}
-          <div className="mt-8">
+          <div className="mt-6 md:mt-8">
             <h3 className="text-lg font-medium mb-4">Recent Requests</h3>
-            <div className="border rounded-lg">
+            <div className="border rounded-lg overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>

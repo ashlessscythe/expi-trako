@@ -1,27 +1,45 @@
 "use client";
 
-import { ChartConfig, ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, XAxis, YAxis } from "recharts";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const statusChartConfig = {
   status: {
     label: "Status",
-    color: "hsl(var(--chart-1))"
-  }
+    color: "hsl(var(--chart-1))",
+  },
 } satisfies ChartConfig;
 
 const volumeChartConfig = {
   count: {
     label: "Requests",
-    color: "hsl(var(--chart-1))"
-  }
+    color: "hsl(var(--chart-1))",
+  },
 } satisfies ChartConfig;
 
 const transloadChartConfig = {
   count: {
     label: "Trailers",
-    color: "hsl(var(--chart-2))"
-  }
+    color: "hsl(var(--chart-2))",
+  },
 } satisfies ChartConfig;
 
 interface StatusChartProps {
@@ -30,19 +48,22 @@ interface StatusChartProps {
 
 export function StatusChart({ data }: StatusChartProps) {
   return (
-    <ChartContainer config={statusChartConfig} className="h-full">
-      <PieChart>
+    <ChartContainer config={statusChartConfig} className="h-full w-full">
+      <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
         <Pie
           data={data}
           dataKey="value"
           nameKey="name"
           cx="50%"
           cy="50%"
-          outerRadius={80}
+          outerRadius="35%"
           label
         >
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={`hsl(var(--chart-${(index % 5) + 1}))`} />
+            <Cell
+              key={`cell-${index}`}
+              fill={`hsl(var(--chart-${(index % 5) + 1}))`}
+            />
           ))}
         </Pie>
         <ChartTooltip content={<ChartTooltipContent />} />
@@ -58,12 +79,15 @@ interface VolumeChartProps {
 
 export function VolumeChart({ data }: VolumeChartProps) {
   return (
-    <ChartContainer config={volumeChartConfig} className="h-full">
-      <LineChart data={data}>
+    <ChartContainer config={volumeChartConfig} className="h-full w-full">
+      <LineChart
+        data={data}
+        margin={{ top: 10, right: 20, bottom: 20, left: 20 }}
+      >
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis 
-          dataKey="date" 
-          tickFormatter={(value) => value.slice(5)} 
+        <XAxis
+          dataKey="date"
+          tickFormatter={(value) => value.slice(5)}
           tickLine={false}
         />
         <YAxis tickLine={false} />
@@ -85,20 +109,19 @@ interface TransloadChartProps {
 
 export function TransloadChart({ data }: TransloadChartProps) {
   return (
-    <ChartContainer config={transloadChartConfig} className="h-full">
-      <BarChart data={data}>
+    <ChartContainer config={transloadChartConfig} className="h-full w-full">
+      <BarChart
+        data={data}
+        margin={{ top: 10, right: 20, bottom: 20, left: 20 }}
+      >
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis 
+        <XAxis
           dataKey="period"
           tickLine={false}
           tickFormatter={(value) => value.slice(5)} // Show only MM-DD
         />
         <YAxis tickLine={false} />
-        <Bar 
-          dataKey="count" 
-          fill="hsl(var(--chart-2))"
-          radius={[4, 4, 0, 0]}
-        />
+        <Bar dataKey="count" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
         <ChartTooltip content={<ChartTooltipContent />} />
       </BarChart>
     </ChartContainer>
