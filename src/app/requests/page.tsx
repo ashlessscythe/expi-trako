@@ -40,7 +40,15 @@ export default function RequestsPage() {
       }
     };
 
+    // Initial fetch
     fetchRequests();
+
+    // Set up interval for periodic refresh
+    const intervalId = setInterval(() => {
+      fetchRequests();
+    }, 5 * 1000); // Refresh every 5 seconds
+
+    return () => clearInterval(intervalId);
   }, [session, showAll]);
 
   if (status === "loading") {

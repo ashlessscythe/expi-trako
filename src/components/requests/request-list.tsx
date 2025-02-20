@@ -224,29 +224,6 @@ export default function RequestList({
     hideCompleted,
   ]);
 
-  // Auto-refresh functionality with shorter interval and data fetching
-  useEffect(() => {
-    const fetchAndUpdateRequests = async () => {
-      try {
-        const response = await fetch("/api/requests");
-        if (!response.ok) throw new Error("Failed to fetch requests");
-        const data = await response.json();
-        setRequests(data);
-      } catch (error) {
-        // Silent fail - error shown to user via UI
-      }
-    };
-
-    // Initial fetch
-    fetchAndUpdateRequests();
-
-    // Set up interval for periodic refresh
-    const intervalId = setInterval(() => {
-      fetchAndUpdateRequests();
-    }, 5 * 1000); // Refresh every 5 seconds
-
-    return () => clearInterval(intervalId);
-  }, []);
 
   if (!user) {
     return null;
