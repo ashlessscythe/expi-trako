@@ -79,6 +79,7 @@ export async function GET(req: Request) {
             name: true,
             email: true,
             role: true,
+            site: true,
           },
         },
         trailers: {
@@ -280,6 +281,7 @@ export async function POST(req: Request) {
               name: true,
               email: true,
               role: true,
+              site: true,
             },
           },
           trailers: {

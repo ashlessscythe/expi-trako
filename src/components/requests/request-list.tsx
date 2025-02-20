@@ -38,6 +38,10 @@ interface RequestCreator {
   id: string;
   name: string;
   role: string;
+  site: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 interface Request {
@@ -54,6 +58,10 @@ interface Request {
   updatedAt: string;
   deleted: boolean;
   deletedAt: string | null;
+  site: {
+    id: string;
+    name: string;
+  } | null;
   trailers: {
     id: string;
     requestId: string;
@@ -323,6 +331,7 @@ export default function RequestList({
       "Route Info",
       "Pallet Count",
       "Status",
+      "Site",
       "Trailer Number",
       "Trailer Status",
       "Is Transload",
@@ -345,6 +354,7 @@ export default function RequestList({
           request.routeInfo || "",
           request.palletCount.toString(),
           request.status,
+          request.site?.name || request.creator.site?.name || "No Site",
           "", // Empty trailer number
           "", // Empty trailer status
           "", // Empty is transload
@@ -382,6 +392,7 @@ export default function RequestList({
             request.routeInfo || "",
             request.palletCount.toString(),
             request.status,
+            request.site?.name || request.creator.site?.name || "No Site",
             trailer.trailer.trailerNumber,
             trailer.status,
             trailer.isTransload ? "Yes" : "No",
@@ -401,6 +412,7 @@ export default function RequestList({
               request.routeInfo || "",
               request.palletCount.toString(),
               request.status,
+              request.site?.name || request.creator.site?.name || "No Site",
               trailer.trailer.trailerNumber,
               trailer.status,
               trailer.isTransload ? "Yes" : "No",
@@ -427,6 +439,7 @@ export default function RequestList({
           request.routeInfo || "",
           request.palletCount.toString(),
           request.status,
+          request.site?.name || request.creator.site?.name || "No Site",
           "", // Empty trailer number
           "", // Empty trailer status
           "", // Empty is transload
@@ -629,16 +642,20 @@ export default function RequestList({
           <span className="font-medium">Route Info:</span>
           <div>{request.routeInfo || "-"}</div>
         </div>
-        <div>
-          <span className="font-medium">Created By:</span>
           <div>
-            {request.creator.name}
-            <span className="text-muted-foreground">
-              {" "}
-              ({request.creator.role})
-            </span>
+            <span className="font-medium">Site:</span>
+            <div>{request.site?.name || request.creator.site?.name || "No Site"}</div>
           </div>
-        </div>
+          <div>
+            <span className="font-medium">Created By:</span>
+            <div>
+              {request.creator.name}
+              <span className="text-muted-foreground">
+                {" "}
+                ({request.creator.role})
+              </span>
+            </div>
+          </div>
         <div>
           <span className="font-medium">Created At:</span>
           <div>{new Date(request.createdAt).toLocaleString()}</div>
@@ -883,6 +900,7 @@ export default function RequestList({
                   >
                     Status {getSortIcon("status")}
                   </TableHead>
+                  <TableHead>Site</TableHead>
                   <TableHead>Created By</TableHead>
                   <TableHead
                     onClick={() => handleSort("createdAt")}
@@ -950,6 +968,7 @@ export default function RequestList({
                         {request.status.replace("_", " ")}
                       </Badge>
                     </TableCell>
+                    <TableCell>{request.site?.name || request.creator.site?.name || "No Site"}</TableCell>
                     <TableCell>
                       {request.creator.name}
                       <br />
