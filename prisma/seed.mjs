@@ -291,12 +291,14 @@ async function ensureDefaultSite() {
   return defaultSite;
 }
 
-async function associateUsersWithDefaultSite(defaultSite) {
+async function associateWithDefaultSite(defaultSite) {
+  // First handle users without site
   // Get all users without a site
   const usersWithoutSite = await prisma.user.findMany({
     where: { siteId: null },
   });
 
+  let userUpdateCount = 0;
   if (usersWithoutSite.length > 0) {
     console.log(
       `Found ${usersWithoutSite.length} users without site association`
@@ -330,11 +332,32 @@ async function associateUsersWithDefaultSite(defaultSite) {
       })
     );
 
-    const updatedCount = updates.filter(Boolean).length;
-    console.log(`Associated ${updatedCount} users with default site`);
-    return updatedCount;
+    userUpdateCount = updates.filter(Boolean).length;
+    console.log(`Associated ${userUpdateCount} users with default site`);
   }
-  return 0;
+
+  // Then handle requests without site
+  const requestsWithoutSite = await prisma.mustGoRequest.findMany({
+    where: { siteId: null },
+  });
+
+  let requestUpdateCount = 0;
+  if (requestsWithoutSite.length > 0) {
+    console.log(
+      `Found ${requestsWithoutSite.length} requests without site association`
+    );
+
+    // Update all requests without site to use default site
+    await prisma.mustGoRequest.updateMany({
+      where: { siteId: null },
+      data: { siteId: defaultSite.id },
+    });
+
+    requestUpdateCount = requestsWithoutSite.length;
+    console.log(`Associated ${requestUpdateCount} requests with default site`);
+  }
+
+  return { userUpdateCount, requestUpdateCount };
 }
 
 async function main() {
@@ -371,17 +394,17 @@ async function main() {
   } else if (argv["clear-data"] && argv.destructive) {
     await clearDataExceptUsers();
     // Associate existing users with default site
-    await associateUsersWithDefaultSite(defaultSite);
+    await associateWithDefaultSite(defaultSite);
     createdUsers = await prisma.user.findMany();
   } else if (argv["add-request"] !== undefined) {
     // When adding requests, use existing users
     createdUsers = await prisma.user.findMany();
     console.log(`Using ${createdUsers.length} existing users for new requests`);
-    await associateUsersWithDefaultSite(defaultSite);
+    await associateWithDefaultSite(defaultSite);
   } else if (hasExistingData) {
     // Non-destructive mode with existing data
     console.log("Running in non-destructive mode");
-    await associateUsersWithDefaultSite(defaultSite);
+    await associateWithDefaultSite(defaultSite);
     createdUsers = await prisma.user.findMany();
   } else {
     // Fresh database, create initial data

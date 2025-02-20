@@ -232,7 +232,6 @@ export default function RequestList({
     hideCompleted,
   ]);
 
-
   if (!user) {
     return null;
   }
@@ -354,7 +353,7 @@ export default function RequestList({
           request.routeInfo || "",
           request.palletCount.toString(),
           request.status,
-          request.site?.name || request.creator.site?.name || "No Site",
+          request.site?.name || "nosite",
           "", // Empty trailer number
           "", // Empty trailer status
           "", // Empty is transload
@@ -392,7 +391,7 @@ export default function RequestList({
             request.routeInfo || "",
             request.palletCount.toString(),
             request.status,
-            request.site?.name || request.creator.site?.name || "No Site",
+            request.site?.name || "nosite",
             trailer.trailer.trailerNumber,
             trailer.status,
             trailer.isTransload ? "Yes" : "No",
@@ -412,7 +411,7 @@ export default function RequestList({
               request.routeInfo || "",
               request.palletCount.toString(),
               request.status,
-              request.site?.name || request.creator.site?.name || "No Site",
+              request.site?.name || "nosite",
               trailer.trailer.trailerNumber,
               trailer.status,
               trailer.isTransload ? "Yes" : "No",
@@ -439,7 +438,7 @@ export default function RequestList({
           request.routeInfo || "",
           request.palletCount.toString(),
           request.status,
-          request.site?.name || request.creator.site?.name || "No Site",
+          request.site?.name || "nosite",
           "", // Empty trailer number
           "", // Empty trailer status
           "", // Empty is transload
@@ -642,20 +641,20 @@ export default function RequestList({
           <span className="font-medium">Route Info:</span>
           <div>{request.routeInfo || "-"}</div>
         </div>
+        <div>
+          <span className="font-medium">Site:</span>
+          <div>{request.site?.name || "nosite"}</div>
+        </div>
+        <div>
+          <span className="font-medium">Created By:</span>
           <div>
-            <span className="font-medium">Site:</span>
-            <div>{request.site?.name || request.creator.site?.name || "No Site"}</div>
+            {request.creator.name}
+            <span className="text-muted-foreground">
+              {" "}
+              ({request.creator.role})
+            </span>
           </div>
-          <div>
-            <span className="font-medium">Created By:</span>
-            <div>
-              {request.creator.name}
-              <span className="text-muted-foreground">
-                {" "}
-                ({request.creator.role})
-              </span>
-            </div>
-          </div>
+        </div>
         <div>
           <span className="font-medium">Created At:</span>
           <div>{new Date(request.createdAt).toLocaleString()}</div>
@@ -968,7 +967,7 @@ export default function RequestList({
                         {request.status.replace("_", " ")}
                       </Badge>
                     </TableCell>
-                    <TableCell>{request.site?.name || request.creator.site?.name || "No Site"}</TableCell>
+                    <TableCell>{request.site?.name || "nosite"}</TableCell>
                     <TableCell>
                       {request.creator.name}
                       <br />

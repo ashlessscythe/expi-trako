@@ -92,6 +92,7 @@ export async function GET(req: Request) {
             site: true,
           },
         },
+        site: true,
         trailers: {
           include: {
             trailer: true,
@@ -300,6 +301,7 @@ export async function POST(req: Request) {
               site: true,
             },
           },
+          site: true,
           trailers: {
             include: {
               trailer: true,
