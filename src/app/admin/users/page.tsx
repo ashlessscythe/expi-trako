@@ -6,19 +6,38 @@ import { redirect } from "next/navigation";
 import { sendEmail } from "@/lib/email";
 import { RoleChangeEmail } from "@/components/role-change-email";
 
-async function getUsers() {
-  return await prisma.user.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      site: {
-        select: {
-          id: true,
-          name: true,
-          locationCode: true,
+async function getData() {
+  const [users, sites] = await Promise.all([
+    prisma.user.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        site: {
+          select: {
+            id: true,
+            name: true,
+            locationCode: true,
+          },
+        },
+        userSites: {
+          include: {
+            site: {
+              select: {
+                id: true,
+                name: true,
+                locationCode: true,
+              },
+            },
+          },
         },
       },
-    },
-  });
+    }),
+    prisma.site.findMany({
+      where: { isActive: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
+
+  return { users, sites };
 }
 
 async function updateUserRole(formData: FormData) {
@@ -36,7 +55,24 @@ async function updateUserRole(formData: FormData) {
   const currentUser = await prisma.user.findUnique({
     where: { id: userId },
     include: {
-      site: true,
+      site: {
+        select: {
+          id: true,
+          name: true,
+          locationCode: true,
+        },
+      },
+      userSites: {
+        include: {
+          site: {
+            select: {
+              id: true,
+              name: true,
+              locationCode: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -59,7 +95,7 @@ async function updateUserRole(formData: FormData) {
         <RoleChangeEmail
           firstName={currentUser.name.split(" ")[0]}
           newRole={newRole}
-          siteName={currentUser.site?.name || "Unassigned Site"}
+          user={currentUser}
         />
       ),
     });
@@ -74,7 +110,7 @@ export default async function UsersPage() {
     redirect("/");
   }
 
-  const users = await getUsers();
+  const { users, sites } = await getData();
 
   return (
     <div className="space-y-6">
@@ -82,7 +118,7 @@ export default async function UsersPage() {
         <h2 className="text-2xl font-semibold">User Management</h2>
       </div>
 
-      <UsersTable users={users} onRoleChange={updateUserRole} />
+      <UsersTable users={users} sites={sites} onRoleChange={updateUserRole} />
     </div>
   );
 }

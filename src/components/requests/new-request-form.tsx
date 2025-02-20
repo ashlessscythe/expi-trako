@@ -1,13 +1,20 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { RequestStatus, Role } from "@prisma/client";
+import { RequestStatus, Role, Site } from "@prisma/client";
 import type { FormData } from "@/lib/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface TrailerInput {
   trailerNumber: string;
@@ -21,9 +28,13 @@ interface TrailerInput {
 
 interface NewRequestFormProps {
   userRole: Role;
+  userId: string;
 }
 
-export default function NewRequestForm({ userRole }: NewRequestFormProps) {
+export default function NewRequestForm({
+  userRole,
+  userId,
+}: NewRequestFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -35,7 +46,9 @@ export default function NewRequestForm({ userRole }: NewRequestFormProps) {
       parts: [],
     },
   ]);
-  const [formData, setFormData] = useState<FormData>({
+  const [sites, setSites] = useState<Site[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState<FormData & { siteId?: string }>({
     shipmentNumber: "",
     plant: "",
     trailers: [],
@@ -47,6 +60,46 @@ export default function NewRequestForm({ userRole }: NewRequestFormProps) {
         ? RequestStatus.REPORTING
         : RequestStatus.PENDING,
   });
+
+  useEffect(() => {
+    const fetchUserSites = async () => {
+      try {
+        const response = await fetch(`/api/users/${userId}`);
+        if (!response.ok) throw new Error("Failed to fetch user sites");
+        const userData = await response.json();
+
+        // Combine sites from both old and new relationships
+        const userSites = [
+          ...(userData.userSites?.map((us: any) => us.site) || []),
+          ...(userData.site ? [userData.site] : []),
+        ];
+
+        // Remove duplicates based on site id
+        const uniqueSites = Array.from(
+          new Map(userSites.map((site) => [site.id, site])).values()
+        );
+
+        setSites(uniqueSites);
+
+        // If user has only one site, set it as default
+        if (uniqueSites.length === 1) {
+          setFormData((prev) => ({ ...prev, siteId: uniqueSites[0].id }));
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch user sites:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load sites",
+          variant: "destructive",
+        });
+        setLoading(false);
+      }
+    };
+
+    fetchUserSites();
+  }, [userId, toast]);
 
   const parsePartsInput = (input: string) => {
     return input
@@ -95,9 +148,15 @@ export default function NewRequestForm({ userRole }: NewRequestFormProps) {
         };
       });
 
+      // Validate site selection if user has multiple sites
+      if (sites.length > 1 && !formData.siteId) {
+        throw new Error("Please select a site for this request");
+      }
+
       const requestData = {
         ...formData,
         trailers: processedTrailers,
+        siteId: formData.siteId,
       };
 
       const response = await fetch("/api/requests", {
@@ -180,6 +239,28 @@ export default function NewRequestForm({ userRole }: NewRequestFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {sites.length > 1 && (
+        <div className="space-y-2">
+          <Label htmlFor="site">Site *</Label>
+          <Select
+            value={formData.siteId}
+            onValueChange={(value) =>
+              setFormData((prev) => ({ ...prev, siteId: value }))
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a site" />
+            </SelectTrigger>
+            <SelectContent>
+              {sites.map((site) => (
+                <SelectItem key={site.id} value={site.id}>
+                  {site.name} ({site.locationCode})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="space-y-2">
         <Label htmlFor="shipmentNumber">Shipment Number *</Label>
         <Input

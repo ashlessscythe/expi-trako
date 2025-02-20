@@ -1,14 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -20,39 +13,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 import { User } from "@/lib/types/user";
 import { Site } from "@prisma/client";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface UserEditModalProps {
   user: User;
+  sites: Site[];
   onUpdate: () => void;
 }
 
-export function UserEditModal({ user, onUpdate }: UserEditModalProps) {
+export function UserEditModal({ user, sites, onUpdate }: UserEditModalProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [sites, setSites] = useState<Site[]>([]);
+  const [selectedSites, setSelectedSites] = useState<string[]>(() => {
+    // Initialize selected sites from both old and new relationships
+    const siteIds = [
+      ...(user.userSites?.map((us) => us.siteId) || []),
+      ...(user.siteId ? [user.siteId] : []),
+    ];
+    return [...new Set(siteIds)]; // Remove duplicates
+  });
   const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchSites = async () => {
-      try {
-        const response = await fetch("/api/sites");
-        if (!response.ok) throw new Error("Failed to fetch sites");
-        const data = await response.json();
-        setSites(data);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to load sites",
-          variant: "destructive",
-        });
-      }
-    };
-
-    fetchSites();
-  }, [toast]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -63,7 +45,7 @@ export function UserEditModal({ user, onUpdate }: UserEditModalProps) {
       name: formData.get("name") as string,
       email: formData.get("email") as string,
       password: formData.get("password") as string,
-      siteId: (formData.get("siteId") as string) || null,
+      sites: selectedSites,
     };
 
     try {
@@ -135,22 +117,30 @@ export function UserEditModal({ user, onUpdate }: UserEditModalProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="site" className="text-muted-foreground">
-              Site
-            </Label>
-            <Select name="siteId" defaultValue={user.siteId || "unassigned"}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a site" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unassigned">No site assigned</SelectItem>
-                {sites.map((site) => (
-                  <SelectItem key={site.id} value={site.id}>
+            <Label className="text-muted-foreground">Sites</Label>
+            <div className="grid grid-cols-2 gap-4">
+              {sites.map((site) => (
+                <div key={site.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`site-${site.id}`}
+                    checked={selectedSites.includes(site.id)}
+                    onCheckedChange={(checked) => {
+                      setSelectedSites((prev) =>
+                        checked
+                          ? [...prev, site.id]
+                          : prev.filter((id) => id !== site.id)
+                      );
+                    }}
+                  />
+                  <Label
+                    htmlFor={`site-${site.id}`}
+                    className="text-sm font-normal"
+                  >
                     {site.name} ({site.locationCode})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  </Label>
+                </div>
+              ))}
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="password" className="text-muted-foreground">

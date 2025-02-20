@@ -7,8 +7,16 @@ type SiteDisplay = {
   locationCode: string;
 };
 
-// Define base User type with nullable siteId and optional site
+// Define UserSite type
+type UserSiteDisplay = {
+  id: string;
+  siteId: string;
+  site: SiteDisplay;
+};
+
+// Define base User type with nullable siteId, optional site, and userSites
 export type User = Omit<PrismaUser, "siteId"> & {
   siteId: string | null;
   site?: SiteDisplay | null;
+  userSites?: UserSiteDisplay[];
 };

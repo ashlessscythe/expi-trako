@@ -34,12 +34,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if user already exists in this site
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        email,
-        siteId: site.id,
-      },
+    // Check if user already exists (email is now globally unique)
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
     });
 
     if (existingUser) {
@@ -52,17 +49,27 @@ export async function POST(req: Request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
+    // Create user with both new and old site relationships
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
         role: "PENDING", // Default role for new users
-        siteId: site.id,
+        siteId: site.id, // Maintain backwards compatibility
+        userSites: {
+          create: {
+            siteId: site.id,
+          },
+        },
       },
       include: {
         site: true,
+        userSites: {
+          include: {
+            site: true,
+          },
+        },
       },
     });
 

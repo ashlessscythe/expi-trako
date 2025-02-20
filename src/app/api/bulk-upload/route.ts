@@ -73,7 +73,7 @@ function groupDataByCriteria(
   rawData: any[],
   splitCriteria: SplitCriteria
 ): RowData[] {
-  const groupedData: { [key: string]: any } = {};
+  const groupedData: { [key: string]: RowData } = {};
 
   rawData.forEach((row) => {
     const shipmentNumber = row["SHIPMENT"]?.toString() || "";
@@ -87,7 +87,6 @@ function groupDataByCriteria(
 
     if (!partNumber || !quantity) return;
 
-    // Create a unique key based on the split criteria
     let groupKey: string;
     switch (splitCriteria) {
       case "shipment":
@@ -126,7 +125,6 @@ function groupDataByCriteria(
       };
     }
 
-    // Add part with its context
     groupedData[groupKey].parts.push({
       partNumber,
       quantity,
@@ -185,7 +183,8 @@ function parseRawText(text: string, splitCriteria: SplitCriteria): RowData[] {
 async function processRows(
   rows: RowData[],
   userId: string,
-  userRole: string
+  userRole: string,
+  siteId: string | null
 ): Promise<ProcessResult> {
   const result: ProcessResult = {
     success: true,
@@ -209,23 +208,22 @@ async function processRows(
     }
 
     try {
-      // Group parts by trailer
-      const partsByTrailer = row.parts.reduce((acc, part) => {
-        if (!acc[part.trailerNumber]) {
-          acc[part.trailerNumber] = [];
-        }
-        acc[part.trailerNumber].push(part);
-        return acc;
-      }, {} as { [key: string]: PartData[] });
+      const partsByTrailer = row.parts.reduce<{ [key: string]: PartData[] }>(
+        (acc, part) => {
+          if (!acc[part.trailerNumber]) {
+            acc[part.trailerNumber] = [];
+          }
+          acc[part.trailerNumber].push(part);
+          return acc;
+        },
+        {}
+      );
 
-      // Calculate total pallet count across all parts
       const totalPalletCount = row.parts.reduce((acc, part) => {
         return acc + Math.ceil(part.quantity / 24);
       }, 0);
 
-      // Use transaction to ensure data consistency
       await prisma.$transaction(async (tx) => {
-        // Create the request first
         const request = await tx.mustGoRequest.create({
           data: {
             shipmentNumber: row.shipmentNumber,
@@ -233,6 +231,7 @@ async function processRows(
             routeInfo: row.routeInfo,
             palletCount: totalPalletCount,
             createdBy: userId,
+            siteId: siteId,
             status:
               userRole === "WAREHOUSE"
                 ? RequestStatus.REPORTING
@@ -246,9 +245,7 @@ async function processRows(
           },
         });
 
-        // Process each trailer and its parts
         for (const [trailerNumber, parts] of Object.entries(partsByTrailer)) {
-          // Create or find the trailer
           const trailer = await tx.trailer.upsert({
             where: {
               trailerNumber,
@@ -259,7 +256,6 @@ async function processRows(
             update: {},
           });
 
-          // Link trailer to request with isTransload defaulting to false
           await tx.requestTrailer.create({
             data: {
               request: {
@@ -272,11 +268,10 @@ async function processRows(
                   id: trailer.id,
                 },
               },
-              isTransload: false, // Default to false for bulk uploads
+              isTransload: false,
             },
           });
 
-          // Create part details for this trailer
           await Promise.all(
             parts.map((part) =>
               tx.partDetail.create({
@@ -325,9 +320,16 @@ export async function POST(request: NextRequest) {
 
     const user = session.user as SessionUser;
 
-    // Verify user exists in database
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
+      include: {
+        site: true,
+        userSites: {
+          include: {
+            site: true,
+          },
+        },
+      },
     });
 
     if (!dbUser) {
@@ -353,11 +355,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get all user's sites
+    const userSites = [
+      ...(dbUser.userSites?.map((us) => us.site) || []),
+      ...(dbUser.site ? [dbUser.site] : []),
+    ];
+    // Remove duplicates
+    const uniqueSites = Array.from(
+      new Map(userSites.map((site) => [site.id, site])).values()
+    );
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const text = formData.get("text") as string | null;
+    const siteId = formData.get("siteId") as string | null;
     const splitCriteria =
       (formData.get("splitCriteria") as SplitCriteria) || "shipment";
+
+    // If user has multiple sites, require site selection
+    if (uniqueSites.length > 1 && !siteId) {
+      return NextResponse.json(
+        { error: "Site selection is required" },
+        { status: 400 }
+      );
+    }
+
+    // Use provided siteId or default to user's only site
+    const selectedSiteId = siteId || uniqueSites[0]?.id;
 
     let rows: RowData[] = [];
 
@@ -380,7 +404,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await processRows(rows, dbUser.id, dbUser.role);
+    const result = await processRows(
+      rows,
+      dbUser.id,
+      dbUser.role,
+      selectedSiteId
+    );
 
     return NextResponse.json(result);
   } catch (error) {

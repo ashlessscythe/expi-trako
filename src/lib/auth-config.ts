@@ -19,26 +19,17 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Missing credentials");
         }
 
-        // Get site from credentials or use default
-        const site = credentials.site
-          ? await prisma.site.findFirst({
-              where: { locationCode: credentials.site },
-            })
-          : await prisma.site.findFirst({
-              where: { locationCode: "DEFAULT" },
-            });
-
-        if (!site) {
-          throw new Error("Invalid site");
-        }
-
-        const user = await prisma.user.findFirst({
+        const user = await prisma.user.findUnique({
           where: {
             email: credentials.email,
-            siteId: site.id,
           },
           include: {
-            site: true,
+            userSites: {
+              include: {
+                site: true,
+              },
+            },
+            site: true, // Include old relation for backwards compatibility
           },
         });
 
@@ -55,16 +46,20 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid password");
         }
 
+        // For backwards compatibility, prioritize the old site relation
+        // If not present, use the first site from userSites
+        const primarySite = user.site || user.userSites[0]?.site;
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
-          site: user.site
+          site: primarySite
             ? {
-                id: user.site.id,
-                name: user.site.name,
-                locationCode: user.site.locationCode,
+                id: primarySite.id,
+                name: primarySite.name,
+                locationCode: primarySite.locationCode,
               }
             : undefined,
         };

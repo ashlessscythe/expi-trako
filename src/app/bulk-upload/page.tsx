@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
+import { Site } from "@prisma/client";
 import {
   Select,
   SelectContent,
@@ -44,7 +46,52 @@ export default function BulkUploadPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ProcessResult | null>(null);
   const [showResultModal, setShowResultModal] = useState(false);
+  const { user } = useAuth();
+  const [sites, setSites] = useState<Site[]>([]);
+  const [selectedSite, setSelectedSite] = useState<string>("");
   const [splitCriteria, setSplitCriteria] = useState<SplitCriteria>("shipment");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserSites = async () => {
+      try {
+        if (!user) return;
+        const response = await fetch(`/api/users/${user.id}`);
+        if (!response.ok) throw new Error("Failed to fetch user sites");
+        const userData = await response.json();
+
+        // Combine sites from both old and new relationships
+        const userSites = [
+          ...(userData.userSites?.map((us: any) => us.site) || []),
+          ...(userData.site ? [userData.site] : []),
+        ];
+
+        // Remove duplicates
+        const uniqueSites = Array.from(
+          new Map(userSites.map((site) => [site.id, site])).values()
+        );
+
+        setSites(uniqueSites);
+
+        // If user has only one site, set it as default
+        if (uniqueSites.length === 1) {
+          setSelectedSite(uniqueSites[0].id);
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch user sites:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load sites",
+          variant: "destructive",
+        });
+        setLoading(false);
+      }
+    };
+
+    fetchUserSites();
+  }, [user, toast]);
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>,
@@ -55,9 +102,20 @@ export default function BulkUploadPage() {
     setError(null);
     setResult(null);
 
+    // Validate site selection if user has multiple sites
+    if (sites.length > 1 && !selectedSite) {
+      toast({
+        title: "Error",
+        description: "Please select a site",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const formData = new FormData(event.currentTarget);
     formData.append("splitCriteria", splitCriteria);
     formData.append("type", type);
+    formData.append("siteId", selectedSite);
 
     try {
       const response = await fetch("/api/bulk-upload", {
@@ -127,6 +185,33 @@ export default function BulkUploadPage() {
             {error}
           </div>
         )}
+
+        {loading ? (
+          <Card className="p-6">
+            <div>Loading...</div>
+          </Card>
+        ) : sites.length > 1 ? (
+          <Card className="p-6">
+            <h2 className="text-lg font-semibold mb-4">Select Site</h2>
+            <div className="max-w-xs">
+              <Select value={selectedSite} onValueChange={setSelectedSite}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a site" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sites.map((site) => (
+                    <SelectItem key={site.id} value={site.id}>
+                      {site.name} ({site.locationCode})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Select the site for these requests.
+              </p>
+            </div>
+          </Card>
+        ) : null}
 
         <Card className="p-6">
           <h2 className="text-lg font-semibold mb-4">Split Criteria</h2>

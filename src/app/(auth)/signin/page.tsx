@@ -11,25 +11,8 @@ export default function SignIn() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [site, setSite] = useState("");
-  const [sites, setSites] = useState<Site[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    // Fetch available sites
-    fetch("/api/sites/list")
-      .then((res) => res.json())
-      .then((data) => {
-        setSites(data);
-        // Set default site if available
-        const defaultSite = data.find((s: Site) => s.locationCode === "DEFAULT");
-        if (defaultSite) {
-          setSite(defaultSite.locationCode);
-        }
-      })
-      .catch((err) => console.error("Failed to fetch sites:", err));
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +23,6 @@ export default function SignIn() {
       const result = await signIn("credentials", {
         email,
         password,
-        site,
         redirect: false,
       });
 
@@ -109,28 +91,6 @@ export default function SignIn() {
                   Forgot password?
                 </Link>
               </div>
-            </div>
-            <div className="space-y-2">
-              <label
-                htmlFor="site"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                Site
-              </label>
-              <select
-                id="site"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={site}
-                onChange={(e) => setSite(e.target.value)}
-                required
-              >
-                <option value="">Select a site</option>
-                {sites.map((site) => (
-                  <option key={site.id} value={site.locationCode}>
-                    {site.name}
-                  </option>
-                ))}
-              </select>
             </div>
             {error && (
               <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">

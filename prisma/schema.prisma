@@ -19,15 +19,16 @@ model Site {
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   requests        MustGoRequest[]
-  users           User[]          // Relation to users at this site
+  // Many-to-many relationship with users
+  userSites       UserSite[]
+  // Keep old relation for backwards compatibility
+  users           User[]          
 }
 
 model User {
   id                    String          @id @default(cuid())
   name                  String
-  email                 String
-  siteId               String?         // Optional for backward compatibility
-  site                 Site?           @relation(fields: [siteId], references: [id])
+  email                 String          @unique // Make email globally unique
   password              String
   role                  Role
   resetToken           String?         @unique
@@ -36,8 +37,26 @@ model User {
   updatedAt            DateTime        @updatedAt
   mustGoRequests       MustGoRequest[] @relation("CreatedBy")
   requestLogs          RequestLog[]    @relation("PerformedBy")
+  // Many-to-many relationship with sites
+  userSites            UserSite[]
+  // Keep old relation for backwards compatibility
+  siteId               String?         
+  site                 Site?           @relation(fields: [siteId], references: [id])
 
-  @@unique([email, siteId])  // Ensure email is unique within a site
+  @@index([siteId])
+}
+
+// Junction table for many-to-many relationship between users and sites
+model UserSite {
+  id        String   @id @default(cuid())
+  userId    String
+  siteId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, siteId])
+  @@index([userId])
   @@index([siteId])
 }
 

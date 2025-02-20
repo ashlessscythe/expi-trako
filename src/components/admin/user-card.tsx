@@ -2,16 +2,40 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { RoleSelect } from "@/components/admin/role-select";
 import { UserEditModal } from "@/components/admin/user-edit-modal";
 import { User } from "@/lib/types/user";
+import { Site } from "@prisma/client";
 
 interface UserCardProps {
   user: User;
+  sites: Site[];
   onRoleChange: (formData: FormData) => Promise<void>;
   onUpdate: () => void;
 }
 
-export function UserCard({ user, onRoleChange, onUpdate }: UserCardProps) {
+export function UserCard({
+  user,
+  sites,
+  onRoleChange,
+  onUpdate,
+}: UserCardProps) {
   const formatDate = (date: Date) => {
     return new Date(date).toISOString().split("T")[0];
+  };
+
+  const renderSites = (user: User) => {
+    const userSites = [
+      ...(user.userSites?.map((us) => us.site) || []),
+      ...(user.site ? [user.site] : []),
+    ];
+    // Remove duplicates based on site id
+    const uniqueSites = Array.from(
+      new Map(userSites.map((site) => [site.id, site])).values()
+    );
+
+    return uniqueSites.length > 0
+      ? uniqueSites
+          .map((site) => `${site.name} (${site.locationCode})`)
+          .join(", ")
+      : "No sites assigned";
   };
 
   return (
@@ -22,12 +46,8 @@ export function UserCard({ user, onRoleChange, onUpdate }: UserCardProps) {
       </CardHeader>
       <CardContent className="space-y-2">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Site:</span>
-          <span>
-            {user.site
-              ? `${user.site.name} (${user.site.locationCode})`
-              : "No site assigned"}
-          </span>
+          <span className="text-muted-foreground">Sites:</span>
+          <span className="text-right">{renderSites(user)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Role:</span>
@@ -42,7 +62,7 @@ export function UserCard({ user, onRoleChange, onUpdate }: UserCardProps) {
           <span>{formatDate(user.createdAt)}</span>
         </div>
         <div className="flex justify-end">
-          <UserEditModal user={user} onUpdate={onUpdate} />
+          <UserEditModal user={user} sites={sites} onUpdate={onUpdate} />
         </div>
       </CardContent>
     </Card>

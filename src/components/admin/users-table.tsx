@@ -12,15 +12,17 @@ import { RoleSelect } from "@/components/admin/role-select";
 import { UserEditModal } from "@/components/admin/user-edit-modal";
 import { UserCard } from "@/components/admin/user-card";
 import { useRouter } from "next/navigation";
-import { Role } from "@prisma/client";
+import { Role, Site } from "@prisma/client";
+import { renderSites } from "@/hooks/userInfo";
 import { User } from "@/lib/types/user";
 
 interface UsersTableProps {
   users: User[];
+  sites: Site[];
   onRoleChange: (formData: FormData) => Promise<void>;
 }
 
-export function UsersTable({ users, onRoleChange }: UsersTableProps) {
+export function UsersTable({ users, sites, onRoleChange }: UsersTableProps) {
   const router = useRouter();
 
   const handleUpdate = () => {
@@ -37,6 +39,7 @@ export function UsersTable({ users, onRoleChange }: UsersTableProps) {
       user={user}
       onRoleChange={onRoleChange}
       onUpdate={handleUpdate}
+      sites={sites}
     />
   );
 
@@ -52,7 +55,7 @@ export function UsersTable({ users, onRoleChange }: UsersTableProps) {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Site</TableHead>
+              <TableHead>Sites</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Joined</TableHead>
               <TableHead className="w-[50px]">Actions</TableHead>
@@ -63,11 +66,7 @@ export function UsersTable({ users, onRoleChange }: UsersTableProps) {
               <TableRow key={user.id}>
                 <TableCell>{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell>
-                  {user.site
-                    ? `${user.site.name} (${user.site.locationCode})`
-                    : "No site assigned"}
-                </TableCell>
+                <TableCell>{renderSites(user)}</TableCell>
                 <TableCell>
                   <RoleSelect
                     userId={user.id}
@@ -77,7 +76,11 @@ export function UsersTable({ users, onRoleChange }: UsersTableProps) {
                 </TableCell>
                 <TableCell>{formatDate(user.createdAt)}</TableCell>
                 <TableCell>
-                  <UserEditModal user={user} onUpdate={handleUpdate} />
+                  <UserEditModal
+                    user={user}
+                    sites={sites}
+                    onUpdate={handleUpdate}
+                  />
                 </TableCell>
               </TableRow>
             ))}

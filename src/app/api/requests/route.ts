@@ -28,12 +28,22 @@ export async function GET(req: Request) {
       ...(!includeDeleted && { deleted: false }),
       ...(user.role === "CUSTOMER_SERVICE" &&
         !showAll && { createdBy: user.id }),
-      // If not admin and user has a site, only show requests from their site or requests without a site
-      ...(user.role !== "ADMIN" && user.site && {
+      // If not admin, show requests from any of user's sites (old or new relationship) or requests without a site
+      ...(user.role !== "ADMIN" && {
         OR: [
-          { siteId: user.site.id },
-          { siteId: null }
-        ]
+          { siteId: null },
+          ...(user.site ? [{ siteId: user.site.id }] : []),
+          {
+            siteId: {
+              in: (
+                await prisma.userSite.findMany({
+                  where: { userId: user.id },
+                  select: { siteId: true },
+                })
+              ).map((us) => us.siteId),
+            },
+          },
+        ],
       }),
     };
 
@@ -134,12 +144,17 @@ export async function POST(req: Request) {
 
     const user = session.user as SessionUser;
 
-    // Verify user exists in database
+    // Verify user exists in database and get their sites
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
       include: {
-        site: true
-      }
+        site: true,
+        userSites: {
+          include: {
+            site: true,
+          },
+        },
+      },
     });
 
     if (!dbUser) {
@@ -221,7 +236,8 @@ export async function POST(req: Request) {
           routeInfo,
           additionalNotes,
           createdBy: dbUser.id,
-          siteId: dbUser.site?.id || null,
+          // Use old site relationship first, then first site from userSites if available
+          siteId: dbUser.site?.id || dbUser.userSites[0]?.site.id || null,
           status:
             dbUser.role === "WAREHOUSE"
               ? RequestStatus.REPORTING

@@ -52,5 +52,5 @@ export function ProtectedNewRequestForm() {
     return null;
   }
 
-  return <NewRequestForm userRole={user.role} />;
+  return <NewRequestForm userRole={user.role} userId={user.id} />;
 }
