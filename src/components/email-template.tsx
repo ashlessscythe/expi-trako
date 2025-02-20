@@ -3,10 +3,12 @@ import { APP_NAME } from "@/lib/config";
 
 interface EmailTemplateProps {
   firstName: string;
+  siteName: string;
 }
 
 export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
   firstName,
+  siteName,
 }) => (
   <div
     style={{
@@ -31,7 +33,7 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
           fontWeight: "bold",
         }}
       >
-        Welcome to {APP_NAME}, {firstName}! 🎉
+        Welcome to {APP_NAME} at {siteName}, {firstName}! 🎉
       </h1>
     </div>
 
@@ -51,8 +53,8 @@ export const EmailTemplate: React.FC<Readonly<EmailTemplateProps>> = ({
           margin: "0 0 20px",
         }}
       >
-        Thank you for signing up with {APP_NAME}. We're excited to have you on
-        board! Your account is currently pending approval from our
+        Thank you for signing up with {APP_NAME} at {siteName}. We're excited to
+        have you on board! Your account is currently pending approval from our
         administrators. Once approved, you'll receive another notification and
         can start using the platform.
       </p>

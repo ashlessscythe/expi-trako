@@ -12,14 +12,34 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        site: { label: "Site", type: "text", optional: true },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Missing credentials");
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        // Get site from credentials or use default
+        const site = credentials.site
+          ? await prisma.site.findFirst({
+              where: { locationCode: credentials.site },
+            })
+          : await prisma.site.findFirst({
+              where: { locationCode: "DEFAULT" },
+            });
+
+        if (!site) {
+          throw new Error("Invalid site");
+        }
+
+        const user = await prisma.user.findFirst({
+          where: {
+            email: credentials.email,
+            siteId: site.id,
+          },
+          include: {
+            site: true,
+          },
         });
 
         if (!user) {
@@ -40,6 +60,13 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          site: user.site
+            ? {
+                id: user.site.id,
+                name: user.site.name,
+                locationCode: user.site.locationCode,
+              }
+            : undefined,
         };
       },
     }),
@@ -58,6 +85,7 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         token.name = user.name;
         token.role = user.role;
+        token.site = user.site;
         token.version = JWT_VERSION;
       } else if (!token.version || token.version !== JWT_VERSION) {
         // Force reauth if token version doesn't match current version
@@ -71,6 +99,7 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email as string;
         session.user.name = token.name as string;
         session.user.role = token.role as Role;
+        session.user.site = token.site;
       }
 
       return session;

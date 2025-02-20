@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
-    const { token, password } = await request.json();
+    const { token, password, site: locationCode } = await request.json();
 
     if (!token || !password) {
       return Response.json(
@@ -19,6 +19,16 @@ export async function POST(request: Request) {
         resetTokenExpires: {
           gt: new Date(),
         },
+        ...(locationCode
+          ? {
+              site: {
+                locationCode,
+              },
+            }
+          : {}),
+      },
+      include: {
+        site: true,
       },
     });
 
@@ -42,7 +52,10 @@ export async function POST(request: Request) {
       },
     });
 
-    return Response.json({ message: "Password has been reset successfully" });
+    return Response.json({
+      message: "Password has been reset successfully",
+      site: user.site?.name || "Default Site",
+    });
   } catch (error) {
     console.error("Password reset error:", error);
     return Response.json(

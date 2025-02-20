@@ -4,11 +4,12 @@ import { APP_NAME } from "@/lib/config";
 interface PasswordResetEmailProps {
   resetLink: string;
   name: string;
+  siteName: string;
 }
 
 export const PasswordResetEmail: React.FC<
   Readonly<PasswordResetEmailProps>
-> = ({ resetLink, name }) => (
+> = ({ resetLink, name, siteName }) => (
   <div
     style={{
       backgroundColor: "#ffffff",
@@ -62,9 +63,9 @@ export const PasswordResetEmail: React.FC<
           margin: "0 0 20px",
         }}
       >
-        We received a request to reset your password for your {APP_NAME}{" "}
-        account. To proceed with the password reset, please click the button
-        below:
+        We received a request to reset your password for your {APP_NAME} account
+        at {siteName}. To proceed with the password reset, please click the
+        button below:
       </p>
 
       <div style={{ textAlign: "center", margin: "30px 0" }}>

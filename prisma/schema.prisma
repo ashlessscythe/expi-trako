@@ -7,10 +7,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Site {
+  id              String          @id @default(cuid())
+  locationCode    String          @unique
+  name            String
+  address         String?
+  city            String?
+  state           String?
+  country         String?
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  requests        MustGoRequest[]
+  users           User[]          // Relation to users at this site
+}
+
 model User {
   id                    String          @id @default(cuid())
   name                  String
-  email                 String          @unique
+  email                 String
+  siteId               String?         // Optional for backward compatibility
+  site                 Site?           @relation(fields: [siteId], references: [id])
   password              String
   role                  Role
   resetToken           String?         @unique
@@ -19,11 +36,16 @@ model User {
   updatedAt            DateTime        @updatedAt
   mustGoRequests       MustGoRequest[] @relation("CreatedBy")
   requestLogs          RequestLog[]    @relation("PerformedBy")
+
+  @@unique([email, siteId])  // Ensure email is unique within a site
+  @@index([siteId])
 }
 
 model MustGoRequest {
   id              String          @id @default(cuid())
   shipmentNumber  String
+  siteId          String?         // Optional to maintain backward compatibility
+  site            Site?           @relation(fields: [siteId], references: [id])
   plant           String?
   authorizationNumber   String?   @default("")
   palletCount     Int
@@ -42,6 +64,7 @@ model MustGoRequest {
   logs            RequestLog[]    @relation("RequestLogs") // Add opposite relation
 
   @@index([createdBy])
+  @@index([siteId])
 }
 
 model Trailer {

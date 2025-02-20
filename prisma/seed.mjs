@@ -8,14 +8,21 @@ const prisma = new PrismaClient();
 
 // Parse command line arguments
 const argv = yargs(hideBin(process.argv))
+  .option("destructive", {
+    type: "boolean",
+    description: "Allow destructive operations (clear/clear-data)",
+    default: false,
+  })
   .option("clear", {
     type: "boolean",
-    description: "Clear all existing data including users before seeding",
+    description:
+      "Clear all existing data including users before seeding (requires --destructive)",
     default: false,
   })
   .option("clear-data", {
     type: "boolean",
-    description: "Clear all data except users before seeding",
+    description:
+      "Clear all data except users before seeding (requires --destructive)",
     default: false,
   })
   .option("use-faker", {
@@ -30,11 +37,18 @@ const argv = yargs(hideBin(process.argv))
   })
   .option("multiplier", {
     type: "number",
-    description: "Multiplier for request count (defaults to 5 when count is 10)",
+    description:
+      "Multiplier for request count (defaults to 5 when count is 10)",
   })
   .option("add-request", {
     type: "number",
     description: "Number of additional requests to add to existing database",
+  })
+  .check((argv) => {
+    if ((argv.clear || argv["clear-data"]) && !argv.destructive) {
+      throw new Error("Destructive operations require --destructive flag");
+    }
+    return true;
   })
   .parse();
 
@@ -85,39 +99,39 @@ function generateDates(dayCount, maxRequestsPerDay = 5) {
     now.getMonth() - 2,
     now.getDate()
   );
-  
+
   // Get array of random days
   const days = [];
   const totalDays = Math.floor((now - twoMonthsAgo) / (1000 * 60 * 60 * 24));
   const selectedDays = new Set();
-  
+
   while (selectedDays.size < dayCount) {
     const randomDay = faker.number.int({ min: 0, max: totalDays });
     selectedDays.add(randomDay);
   }
-  
+
   // For each selected day, generate 1 to maxRequestsPerDay timestamps during business hours
   const dayRequestCounts = new Map(); // Track requests per day
-  selectedDays.forEach(dayOffset => {
+  selectedDays.forEach((dayOffset) => {
     const date = new Date(twoMonthsAgo);
     date.setDate(date.getDate() + dayOffset);
-    
+
     // Generate between 1 and maxRequestsPerDay requests for this day
     const requestCount = faker.number.int({ min: 1, max: maxRequestsPerDay });
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = date.toISOString().split("T")[0];
     dayRequestCounts.set(dateStr, requestCount);
-    
+
     for (let i = 0; i < requestCount; i++) {
       const hour = faker.number.int({ min: 6, max: 18 });
       const minute = faker.number.int({ min: 0, max: 59 });
       const second = faker.number.int({ min: 0, max: 59 });
-      
+
       const timestamp = new Date(date);
       timestamp.setHours(hour, minute, second, 0);
       days.push(timestamp);
     }
   });
-  
+
   // Sort chronologically and log request counts
   console.log("\nRequests per day:");
   Array.from(dayRequestCounts.entries())
@@ -125,7 +139,7 @@ function generateDates(dayCount, maxRequestsPerDay = 5) {
     .forEach(([date, count]) => {
       console.log(`${date}: ${count} requests`);
     });
-  
+
   return days.sort((a, b) => a - b);
 }
 
@@ -181,94 +195,210 @@ async function hashPassword(password) {
 }
 
 async function clearDatabase() {
-  console.log("Clearing all database data including users...");
+  console.log("Clearing all database data including users and sites...");
+  // Delete in correct order to handle foreign key constraints
   await prisma.requestLog.deleteMany();
   await prisma.partDetail.deleteMany();
   await prisma.requestTrailer.deleteMany();
   await prisma.trailer.deleteMany();
   await prisma.mustGoRequest.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.site.deleteMany();
   console.log("Database cleared completely");
 }
 
 async function clearDataExceptUsers() {
-  console.log("Clearing all data while preserving users...");
+  console.log("Clearing all data while preserving users and sites...");
   await prisma.requestLog.deleteMany();
   await prisma.partDetail.deleteMany();
   await prisma.requestTrailer.deleteMany();
   await prisma.trailer.deleteMany();
   await prisma.mustGoRequest.deleteMany();
-  console.log("Database data cleared (users preserved)");
+  console.log("Database data cleared (users and sites preserved)");
 }
 
 async function generateBasicData(count, useFaker) {
-  // Create default users
-  const joeUser = {
-    name: "joe",
-    email: "joe@joe.joe",
-    password: await hashPassword("cspass"),
-    role: "CUSTOMER_SERVICE",
-  };
-  const aliceUser = {
-    name: "alice",
-    email: "alice@alice.alice",
-    password: await hashPassword("whpass"),
-    role: "WAREHOUSE",
-  };
-  const bobUser = {
-    name: "Bob",
-    email: "bob@bob.bob",
-    password: await hashPassword("adminpass"),
-    role: "ADMIN",
+  // Create default users with unique emails
+  const defaultUsers = [
+    {
+      name: "joe",
+      email: "joe@joe.joe",
+      password: await hashPassword("cspass"),
+      role: "CUSTOMER_SERVICE",
+    },
+    {
+      name: "alice",
+      email: "alice@alice.alice",
+      password: await hashPassword("whpass"),
+      role: "WAREHOUSE",
+    },
+    {
+      name: "Bob",
+      email: "bob@bob.bob",
+      password: await hashPassword("adminpass"),
+      role: "ADMIN",
+    },
+  ];
+
+  // Track used emails to ensure uniqueness
+  const usedEmails = new Set(defaultUsers.map((user) => user.email));
+
+  const generateUniqueEmail = () => {
+    let email;
+    do {
+      email = useFaker
+        ? faker.internet.email()
+        : `user${faker.number.int(9999)}@example.com`;
+    } while (usedEmails.has(email));
+    usedEmails.add(email);
+    return email;
   };
 
-  const users = await Promise.all(
+  const additionalUsers = await Promise.all(
     Array.from({ length: count }, async () => {
       const role = roles[Math.floor(Math.random() * roles.length)];
       return {
         name: useFaker
           ? faker.person.fullName()
           : `User ${faker.number.int(999)}`,
-        email: useFaker
-          ? faker.internet.email()
-          : `user${faker.number.int(999)}@example.com`,
+        email: generateUniqueEmail(),
         password: await hashPassword(rolePasswords[role]),
         role,
       };
     })
   );
 
-  return { users: [joeUser, aliceUser, bobUser, ...users] };
+  return { users: [...defaultUsers, ...additionalUsers] };
+}
+
+async function ensureDefaultSite() {
+  console.log("Ensuring default site exists...");
+  const defaultSite = await prisma.site.upsert({
+    where: { locationCode: "DEFAULT" },
+    update: {},
+    create: {
+      locationCode: "DEFAULT",
+      name: "Default Site",
+      isActive: true,
+    },
+  });
+  console.log("Default site ready:", defaultSite.id);
+  return defaultSite;
+}
+
+async function associateUsersWithDefaultSite(defaultSite) {
+  // Get all users without a site
+  const usersWithoutSite = await prisma.user.findMany({
+    where: { siteId: null },
+  });
+
+  if (usersWithoutSite.length > 0) {
+    console.log(
+      `Found ${usersWithoutSite.length} users without site association`
+    );
+
+    // Check for email conflicts in default site
+    const existingEmails = await prisma.user.findMany({
+      where: {
+        siteId: defaultSite.id,
+        email: { in: usersWithoutSite.map((u) => u.email) },
+      },
+      select: { email: true },
+    });
+    const existingEmailSet = new Set(existingEmails.map((u) => u.email));
+
+    // Update users without site, skipping those with email conflicts
+    const updates = await Promise.all(
+      usersWithoutSite.map(async (user) => {
+        if (!existingEmailSet.has(user.email)) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { siteId: defaultSite.id },
+          });
+          return true;
+        } else {
+          console.log(
+            `Skipping user ${user.email} - email already exists in default site`
+          );
+          return false;
+        }
+      })
+    );
+
+    const updatedCount = updates.filter(Boolean).length;
+    console.log(`Associated ${updatedCount} users with default site`);
+    return updatedCount;
+  }
+  return 0;
 }
 
 async function main() {
   console.log("Starting seed...");
 
+  let defaultSite;
   let createdUsers;
 
-  if (argv["add-request"] !== undefined) {
+  // First check if we have any existing data
+  const existingUserCount = await prisma.user.count();
+  const hasExistingData = existingUserCount > 0;
+
+  console.log(`Found ${existingUserCount} existing users`);
+
+  // Ensure default site exists first in all cases
+  defaultSite = await ensureDefaultSite();
+
+  if (argv.clear && argv.destructive) {
+    await clearDatabase();
+    defaultSite = await ensureDefaultSite();
+
+    // Generate new users
+    const { users } = await generateBasicData(argv.count, argv.useFaker);
+    createdUsers = await Promise.all(
+      users.map((user) =>
+        prisma.user.create({
+          data: {
+            ...user,
+            siteId: defaultSite.id,
+          },
+        })
+      )
+    );
+  } else if (argv["clear-data"] && argv.destructive) {
+    await clearDataExceptUsers();
+    // Associate existing users with default site
+    await associateUsersWithDefaultSite(defaultSite);
+    createdUsers = await prisma.user.findMany();
+  } else if (argv["add-request"] !== undefined) {
     // When adding requests, use existing users
     createdUsers = await prisma.user.findMany();
     console.log(`Using ${createdUsers.length} existing users for new requests`);
-  } else if (argv.clear) {
-    await clearDatabase();
-    const { users } = await generateBasicData(argv.count, argv.useFaker);
-    // Create users
-    createdUsers = await Promise.all(
-      users.map((user) => prisma.user.create({ data: user }))
-    );
-  } else if (argv["clear-data"]) {
-    await clearDataExceptUsers();
-    // Get existing users when preserving them
+    await associateUsersWithDefaultSite(defaultSite);
+  } else if (hasExistingData) {
+    // Non-destructive mode with existing data
+    console.log("Running in non-destructive mode");
+    await associateUsersWithDefaultSite(defaultSite);
     createdUsers = await prisma.user.findMany();
   } else {
+    // Fresh database, create initial data
+    console.log("No existing data found, creating initial dataset");
     const { users } = await generateBasicData(argv.count, argv.useFaker);
-    // Create users
     createdUsers = await Promise.all(
-      users.map((user) => prisma.user.create({ data: user }))
+      users.map((user) =>
+        prisma.user.create({
+          data: {
+            ...user,
+            siteId: defaultSite.id,
+          },
+        })
+      )
     );
   }
-  if (argv["clear-data"]) {
+  // Log appropriate message based on operation
+  if (argv.clear && argv.destructive) {
+    console.log(
+      `Created ${createdUsers.length} users (including default bob@bob.bob)`
+    );
+  } else if (hasExistingData) {
     console.log(`Using ${createdUsers.length} existing users`);
   } else {
     console.log(
@@ -278,12 +408,13 @@ async function main() {
 
   // Create must-go requests with trailers and parts
   const requests = [];
-  
+
   // Generate dates for the specified number of days with max requests per day
-  const dayCount = argv["add-request"] !== undefined ? argv["add-request"] : argv.count;
+  const dayCount =
+    argv["add-request"] !== undefined ? argv["add-request"] : argv.count;
   const maxRequestsPerDay = argv.multiplier || 5; // Default to 5 requests per day max
   const dates = generateDates(dayCount, maxRequestsPerDay);
-  
+
   // Create requests for each timestamp
   for (const createdAt of dates) {
     // Generate 1-3 parts with quantities
@@ -302,7 +433,6 @@ async function main() {
     const noteCount = faker.number.int({ min: 1, max: 3 });
     const selectedNotes = Array.from({ length: noteCount }, generateNote);
 
-
     // Create trailer first
     const trailer = await prisma.trailer.create({
       data: {
@@ -319,6 +449,7 @@ async function main() {
           length: 10,
           casing: "upper",
         }),
+        siteId: defaultSite.id,
         plant: faker.helpers.arrayElement(["FS22", "PL45", "WH23", "DK89"]),
         palletCount: totalPalletCount,
         status:

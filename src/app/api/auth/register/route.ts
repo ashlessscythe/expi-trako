@@ -9,7 +9,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email, password, siteId } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
@@ -18,9 +18,28 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
+    // Get default site if no siteId provided
+    const site = siteId
+      ? await prisma.site.findUnique({
+          where: { id: siteId },
+        })
+      : await prisma.site.findFirst({
+          where: { locationCode: "DEFAULT" },
+        });
+
+    if (!site) {
+      return NextResponse.json(
+        { error: "Invalid site or no default site found" },
+        { status: 400 }
+      );
+    }
+
+    // Check if user already exists in this site
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        email,
+        siteId: site.id,
+      },
     });
 
     if (existingUser) {
@@ -40,6 +59,10 @@ export async function POST(req: Request) {
         email,
         password: hashedPassword,
         role: "PENDING", // Default role for new users
+        siteId: site.id,
+      },
+      include: {
+        site: true,
       },
     });
 
@@ -49,7 +72,10 @@ export async function POST(req: Request) {
         from: `${APP_NAME} <onboarding@${EMAIL_AT}>`,
         to: email,
         subject: `Welcome to ${APP_NAME}`,
-        react: EmailTemplate({ firstName: name || "there" }),
+        react: EmailTemplate({
+          firstName: name || "there",
+          siteName: site.name,
+        }),
       });
     } catch (emailError) {
       console.error("Failed to send welcome email:", emailError);
