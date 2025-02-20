@@ -4,11 +4,13 @@ import { APP_NAME } from "@/lib/config";
 interface RoleChangeEmailProps {
   firstName: string;
   newRole: string;
+  siteName: string;
 }
 
 export const RoleChangeEmail: React.FC<Readonly<RoleChangeEmailProps>> = ({
   firstName,
   newRole,
+  siteName,
 }) => (
   <div
     style={{
@@ -53,8 +55,8 @@ export const RoleChangeEmail: React.FC<Readonly<RoleChangeEmailProps>> = ({
           margin: "0 0 20px",
         }}
       >
-        Great news, {firstName}! Your {APP_NAME} account has been approved.
-        You've been assigned the role of{" "}
+        Great news, {firstName}! Your {APP_NAME} account at {siteName} has been
+        approved. You've been assigned the role of{" "}
         {newRole.toLowerCase().replace(/_/g, " ")}.
       </p>
 

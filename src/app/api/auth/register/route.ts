@@ -74,7 +74,6 @@ export async function POST(req: Request) {
         subject: `Welcome to ${APP_NAME}`,
         react: EmailTemplate({
           firstName: name || "there",
-          siteName: site.name,
         }),
       });
     } catch (emailError) {

@@ -35,6 +35,9 @@ async function updateUserRole(formData: FormData) {
   // Get current user data before update
   const currentUser = await prisma.user.findUnique({
     where: { id: userId },
+    include: {
+      site: true,
+    },
   });
 
   if (!currentUser) {
@@ -56,6 +59,7 @@ async function updateUserRole(formData: FormData) {
         <RoleChangeEmail
           firstName={currentUser.name.split(" ")[0]}
           newRole={newRole}
+          siteName={currentUser.site?.name || "Unassigned Site"}
         />
       ),
     });
