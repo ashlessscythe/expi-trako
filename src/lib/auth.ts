@@ -2,11 +2,7 @@ import { getServerSession } from "next-auth";
 import { Role } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { authOptions } from "./auth-config";
-
-export interface AuthUser {
-  id: string;
-  role: Role;
-}
+import { AuthUser } from "./types";
 
 export async function getAuthUser(): Promise<AuthUser> {
   const session = await getServerSession(authOptions);
@@ -18,6 +14,7 @@ export async function getAuthUser(): Promise<AuthUser> {
   return {
     id: session.user.id,
     role: session.user.role as Role,
+    site: session.user.site,
   };
 }
 

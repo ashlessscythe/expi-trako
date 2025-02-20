@@ -20,11 +20,34 @@ export async function PATCH(
     const authUser: AuthUser = {
       id: user.id,
       role: user.role,
+      site: user.site,
     };
 
     if (!isWarehouse(authUser)) {
       return NextResponse.json(
         { error: "Only warehouse staff can update item statuses" },
+        { status: 403 }
+      );
+    }
+
+    // Check if user has access to this request based on site
+    const request = await prisma.mustGoRequest.findUnique({
+      where: { id: params.id },
+      select: { siteId: true },
+    });
+
+    if (!request) {
+      return NextResponse.json({ error: "Request not found" }, { status: 404 });
+    }
+
+    if (
+      authUser.role !== "ADMIN" &&
+      authUser.site &&
+      request.siteId !== authUser.site.id &&
+      request.siteId !== null
+    ) {
+      return NextResponse.json(
+        { error: "Not authorized to update this request" },
         { status: 403 }
       );
     }

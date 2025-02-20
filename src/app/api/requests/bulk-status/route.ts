@@ -11,11 +11,34 @@ import * as React from "react";
 export async function PUT(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "ADMIN") {
+    if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    const user = session.user;
     const { requestIds, status, sendEmail = false } = await request.json();
+
+    // Verify user has permission to update these requests
+    if (user.role !== "ADMIN" && user.site) {
+      // For non-admin users with a site, verify all requests belong to their site
+      const requests = await prisma.mustGoRequest.findMany({
+        where: {
+          id: { in: requestIds },
+        },
+        select: { id: true, siteId: true },
+      });
+
+      const hasUnauthorizedRequests = requests.some(
+        (req) => req.siteId !== user.site?.id && req.siteId !== null
+      );
+
+      if (hasUnauthorizedRequests) {
+        return new NextResponse(
+          "You can only update requests from your site",
+          { status: 403 }
+        );
+      }
+    }
     if (!requestIds || !Array.isArray(requestIds) || !status) {
       return new NextResponse("Invalid request data", { status: 400 });
     }

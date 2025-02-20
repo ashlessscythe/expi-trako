@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { isCustomerService, isAdmin, isWarehouse } from "@/lib/auth";
-import type { AuthUser } from "@/lib/auth";
+import { AuthUser } from "@/lib/types";
 import NewRequestForm from "@/components/requests/new-request-form";
 
 export function ProtectedNewRequestForm() {
@@ -21,6 +21,7 @@ export function ProtectedNewRequestForm() {
     const authUser: AuthUser = {
       id: user.id,
       role: user.role,
+      site: user.site,
     };
 
     if (
@@ -40,6 +41,7 @@ export function ProtectedNewRequestForm() {
   const authUser: AuthUser = {
     id: user.id,
     role: user.role,
+    site: user.site,
   };
 
   if (

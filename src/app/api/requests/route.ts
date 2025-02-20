@@ -28,6 +28,13 @@ export async function GET(req: Request) {
       ...(!includeDeleted && { deleted: false }),
       ...(user.role === "CUSTOMER_SERVICE" &&
         !showAll && { createdBy: user.id }),
+      // If not admin and user has a site, only show requests from their site or requests without a site
+      ...(user.role !== "ADMIN" && user.site && {
+        OR: [
+          { siteId: user.site.id },
+          { siteId: null }
+        ]
+      }),
     };
 
     if (search) {
@@ -129,6 +136,9 @@ export async function POST(req: Request) {
     // Verify user exists in database
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
+      include: {
+        site: true
+      }
     });
 
     if (!dbUser) {
@@ -210,6 +220,7 @@ export async function POST(req: Request) {
           routeInfo,
           additionalNotes,
           createdBy: dbUser.id,
+          siteId: dbUser.site?.id || null,
           status:
             dbUser.role === "WAREHOUSE"
               ? RequestStatus.REPORTING

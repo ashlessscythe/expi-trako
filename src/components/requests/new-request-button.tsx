@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { isCustomerService, isAdmin, isWarehouse } from "@/lib/auth";
-import type { AuthUser } from "@/lib/auth";
+import { AuthUser } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { RequestTypeModal } from "./request-type-modal";

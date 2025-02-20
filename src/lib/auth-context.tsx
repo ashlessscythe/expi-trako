@@ -8,11 +8,14 @@ import {
 import { useRouter } from "next/navigation";
 import { Role } from "@prisma/client";
 
+import { Site } from "./types";
+
 export interface SessionUser {
   id: string;
   email: string;
   name?: string;
   role: Role;
+  site?: Site;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -35,6 +38,7 @@ export function useAuth() {
         email: session.user.email,
         name: session.user.name,
         role: session.user.role as Role,
+        site: session.user.site,
       }
     : null;
 

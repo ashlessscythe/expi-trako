@@ -1,15 +1,23 @@
 import { RequestStatus, Role, ItemStatus } from "@prisma/client";
 
+export interface Site {
+  id: string;
+  name: string;
+  locationCode: string;
+}
+
 export interface SessionUser {
   id: string;
   email: string;
   name?: string;
   role: Role;
+  site?: Site;
 }
 
 export interface AuthUser {
   id: string;
   role: Role;
+  site?: Site;
 }
 
 export interface PartDetail {

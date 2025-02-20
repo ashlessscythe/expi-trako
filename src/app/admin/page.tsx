@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 import { EmailSettingsCard } from "@/components/admin/email-settings-card";
 
 async function getAdminStats() {
-  const [totalUsers, totalRequests, pendingRequests, completedRequests] =
+  const [totalUsers, totalRequests, pendingRequests, completedRequests, totalSites] =
     await Promise.all([
       prisma.user.count(),
       prisma.mustGoRequest.count(),
@@ -13,6 +13,9 @@ async function getAdminStats() {
       prisma.mustGoRequest.count({
         where: { status: "COMPLETED" },
       }),
+      prisma.site.count({
+        where: { isActive: true },
+      }),
     ]);
 
   return {
@@ -20,6 +23,7 @@ async function getAdminStats() {
     totalRequests,
     pendingRequests,
     completedRequests,
+    totalSites,
   };
 }
 
@@ -30,7 +34,7 @@ export default async function AdminDashboard() {
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">System Overview</h2>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card className="p-4">
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Total Users</p>
@@ -56,6 +60,13 @@ export default async function AdminDashboard() {
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Completed Requests</p>
             <p className="text-2xl font-bold">{stats.completedRequests}</p>
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Active Sites</p>
+            <p className="text-2xl font-bold">{stats.totalSites}</p>
           </div>
         </Card>
       </div>
@@ -87,6 +98,12 @@ export default async function AdminDashboard() {
             className="block p-4 bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg text-center transition-colors"
           >
             View All Requests
+          </a>
+          <a
+            href="/admin/sites"
+            className="block p-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-center transition-colors"
+          >
+            Manage Sites
           </a>
         </div>
       </div>

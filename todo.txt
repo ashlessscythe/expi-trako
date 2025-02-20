@@ -86,14 +86,20 @@ Frontend:
 
 4. ADMIN FEATURES
 Backend:
-- [ ] Test user management endpoints
-- [ ] Test role updates
+- [x] Test user management endpoints
+- [x] Test role updates
+- [x] Implement site management API with CRUD operations
+- [x] Update auth and requests to be site-aware
+- [x] Filter requests by user's site
+- [x] Allow admins to see all requests
+- [x] Handle requests without site assignment
 
 Frontend:
 - [x] Create admin panel (/admin)
   * User management
   * System settings
   * Activity logs
+  * Site management with CRUD operations
 
 5. TESTING & DEPLOYMENT
 - [ ] Test all user flows:

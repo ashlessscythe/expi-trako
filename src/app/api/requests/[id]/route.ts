@@ -61,6 +61,7 @@ export async function GET(
     const authUser: AuthUser = {
       id: user.id,
       role: user.role,
+      site: user.site,
     };
 
     const mustGoRequest = await prisma.mustGoRequest.findUnique({
@@ -106,6 +107,16 @@ export async function GET(
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
 
+    // Check if user has access to this request based on site
+    if (
+      !isAdmin(authUser) &&
+      authUser.site &&
+      mustGoRequest.siteId !== authUser.site.id &&
+      mustGoRequest.siteId !== null
+    ) {
+      return NextResponse.json({ error: "Not authorized to view this request" }, { status: 403 });
+    }
+
     // Add canEdit flag based on user permissions
     const canEdit =
       isAdmin(authUser) ||
@@ -144,6 +155,7 @@ export async function PATCH(
       const authUser: AuthUser = {
         id: user.id,
         role: user.role,
+        site: user.site,
       };
 
       const hasPermission = isWarehouse(authUser);
@@ -268,6 +280,7 @@ export async function PATCH(
       const authUser2: AuthUser = {
         id: user.id,
         role: user.role,
+        site: user.site,
       };
 
       // Check if email notifications are enabled
@@ -343,6 +356,7 @@ export async function PATCH(
     const authUser: AuthUser = {
       id: user.id,
       role: user.role,
+      site: user.site,
     };
 
     // Check if user has permission to edit
@@ -669,6 +683,7 @@ export async function PATCH(
     const authUser2: AuthUser = {
       id: user.id,
       role: user.role,
+      site: user.site,
     };
 
     return NextResponse.json({
