@@ -12,7 +12,11 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth-config";
 import { Header } from "@/components/header";
-import { StatusChart, TransloadChart, VolumeChart } from "@/components/reports/charts";
+import {
+  StatusChart,
+  TransloadChart,
+  VolumeChart,
+} from "@/components/reports/charts";
 import { DateRange } from "@/components/reports/date-range";
 
 // Add searchParams for date ranges
@@ -30,37 +34,69 @@ interface DailyRequestCount {
   count: bigint;
 }
 
-
-async function getReportData(dateRanges: {
-  volumeStart?: string;
-  volumeEnd?: string;
-  transloadStart?: string;
-  transloadEnd?: string;
-}) {
+async function getReportData(
+  dateRanges: {
+    volumeStart?: string;
+    volumeEnd?: string;
+    transloadStart?: string;
+    transloadEnd?: string;
+  },
+  session: any
+) {
+  // Create base where clause for site filtering
+  const baseWhere =
+    session.user.role === "ADMIN" ? {} : { siteId: session.user.site?.id };
   // Default to last 30 days if no dates provided
   const now = new Date();
   const defaultStart = new Date();
   defaultStart.setDate(now.getDate() - 30);
 
   // Parse date ranges with fallbacks
-  const volumeStart = dateRanges.volumeStart ? new Date(dateRanges.volumeStart) : defaultStart;
+  const volumeStart = dateRanges.volumeStart
+    ? new Date(dateRanges.volumeStart)
+    : defaultStart;
   const volumeEnd = dateRanges.volumeEnd ? new Date(dateRanges.volumeEnd) : now;
-  const transloadStart = dateRanges.transloadStart ? new Date(dateRanges.transloadStart) : defaultStart;
-  const transloadEnd = dateRanges.transloadEnd ? new Date(dateRanges.transloadEnd) : now;
+  const transloadStart = dateRanges.transloadStart
+    ? new Date(dateRanges.transloadStart)
+    : defaultStart;
+  const transloadEnd = dateRanges.transloadEnd
+    ? new Date(dateRanges.transloadEnd)
+    : now;
 
-  const [recentRequests, userStats, statusDistribution, transloadTrailers, dailyRequests] = await Promise.all([
+  const [
+    recentRequests,
+    userStats,
+    statusDistribution,
+    transloadTrailers,
+    dailyRequests,
+  ] = await Promise.all([
     prisma.mustGoRequest.findMany({
       take: 10,
       orderBy: { createdAt: "desc" },
+      where: baseWhere,
       include: {
         creator: { select: { name: true, email: true } },
       },
     }),
-    prisma.user.groupBy({ by: ["role"], _count: true }),
-    prisma.mustGoRequest.groupBy({ by: ["status"], _count: true }),
-
+    prisma.user.groupBy({
+      by: ["role"],
+      _count: true,
+      ...(session.user.role !== "ADMIN" && {
+        where: { siteId: session.user.site?.id },
+      }),
+    }),
+    prisma.mustGoRequest.groupBy({
+      by: ["status"],
+      _count: true,
+      where: baseWhere,
+    }),
     prisma.requestTrailer.findMany({
-      where: { isTransload: true },
+      where: {
+        isTransload: true,
+        request: {
+          ...baseWhere,
+        },
+      },
       select: {
         trailer: true,
         createdAt: true,
@@ -68,50 +104,65 @@ async function getReportData(dateRanges: {
       orderBy: { createdAt: "desc" },
     }),
     // Get daily request counts for the past month, grouped by date
-    prisma.$queryRaw<DailyRequestCount[]>`
-      SELECT DATE("createdAt") as date, COUNT(*) as count 
-      FROM "MustGoRequest" 
-      WHERE "createdAt" >= ${volumeStart} AND "createdAt" <= ${volumeEnd}
-      GROUP BY DATE("createdAt")
-      ORDER BY date ASC
-    `
+    session.user.role === "ADMIN"
+      ? prisma.$queryRaw<DailyRequestCount[]>`
+          SELECT DATE("createdAt") as date, COUNT(*) as count 
+          FROM "MustGoRequest" 
+          WHERE "createdAt" >= ${volumeStart} 
+          AND "createdAt" <= ${volumeEnd}
+          GROUP BY DATE("createdAt")
+          ORDER BY date ASC
+        `
+      : prisma.$queryRaw<DailyRequestCount[]>`
+          SELECT DATE("createdAt") as date, COUNT(*) as count 
+          FROM "MustGoRequest" 
+          WHERE "createdAt" >= ${volumeStart} 
+          AND "createdAt" <= ${volumeEnd}
+          AND "siteId" = ${session.user.site?.id}
+          GROUP BY DATE("createdAt")
+          ORDER BY date ASC
+        `,
   ]);
 
   // Process daily request data for the line chart
   const dailyRequestData = dailyRequests.map((day) => ({
-    date: new Date(day.date).toISOString().split('T')[0],
-    count: Number(day.count)
+    date: new Date(day.date).toISOString().split("T")[0],
+    count: Number(day.count),
   }));
 
   // Filter transloads by selected date range
   const filteredTransloads = transloadTrailers.filter(
-    (t) => new Date(t.createdAt) >= transloadStart && new Date(t.createdAt) <= transloadEnd
+    (t) =>
+      new Date(t.createdAt) >= transloadStart &&
+      new Date(t.createdAt) <= transloadEnd
   );
 
   // Process status data for pie chart
-  const statusData = statusDistribution.map(status => ({
+  const statusData = statusDistribution.map((status) => ({
     name: status.status,
     value: status._count,
   }));
 
   // Process transload data - group by day
   const transloadByDay = filteredTransloads.reduce((acc, curr) => {
-    const date = new Date(curr.createdAt).toISOString().split('T')[0];
+    const date = new Date(curr.createdAt).toISOString().split("T")[0];
     acc[date] = (acc[date] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
-  const transloadData = Object.entries(transloadByDay).map(([date, count]) => ({
-    period: date,
-    count,
-  })).sort((a, b) => a.period.localeCompare(b.period));
+  const transloadData = Object.entries(transloadByDay)
+    .map(([date, count]) => ({
+      period: date,
+      count,
+    }))
+    .sort((a, b) => a.period.localeCompare(b.period));
 
-  return { 
-    recentRequests, 
-    userStats, 
-    statusData, 
+  return {
+    recentRequests,
+    userStats,
+    statusData,
     transloadData,
-    dailyRequestData
+    dailyRequestData,
   };
 }
 
@@ -126,19 +177,27 @@ export default async function ReportsPage({ searchParams }: PageProps) {
     redirect("/");
   }
 
-  const { recentRequests, userStats, statusData, transloadData, dailyRequestData } =
-    await getReportData({
+  const {
+    recentRequests,
+    userStats,
+    statusData,
+    transloadData,
+    dailyRequestData,
+  } = await getReportData(
+    {
       volumeStart: searchParams.volumeStart,
       volumeEnd: searchParams.volumeEnd,
       transloadStart: searchParams.transloadStart,
       transloadEnd: searchParams.transloadEnd,
-    });
+    },
+    session
+  );
 
   // Format date for input default value
   const defaultStart = new Date();
   defaultStart.setDate(defaultStart.getDate() - 30);
-  const defaultStartStr = defaultStart.toISOString().split('T')[0];
-  const defaultEndStr = new Date().toISOString().split('T')[0];
+  const defaultStartStr = defaultStart.toISOString().split("T")[0];
+  const defaultEndStr = new Date().toISOString().split("T")[0];
 
   return (
     <>
@@ -191,7 +250,7 @@ export default async function ReportsPage({ searchParams }: PageProps) {
               />
             </div>
             <div className="h-[300px]">
-                <VolumeChart data={dailyRequestData} />
+              <VolumeChart data={dailyRequestData} />
             </div>
           </Card>
 
@@ -209,7 +268,7 @@ export default async function ReportsPage({ searchParams }: PageProps) {
               />
             </div>
             <div className="h-[300px]">
-                <TransloadChart data={transloadData} />
+              <TransloadChart data={transloadData} />
             </div>
           </Card>
 

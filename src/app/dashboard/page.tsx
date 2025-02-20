@@ -3,9 +3,10 @@ import { authOptions } from "@/lib/auth-config";
 import { Header } from "@/components/header";
 import prisma from "@/lib/prisma";
 
-async function getRequestCounts(userId: string, role: string) {
+async function getRequestCounts(userId: string, role: string, siteId?: string) {
   const baseWhere = {
     ...(role === "CUSTOMER_SERVICE" && { createdBy: userId }),
+    ...(role !== "ADMIN" && siteId && { siteId }),
     deleted: false,
   };
 
@@ -55,7 +56,11 @@ export default async function Dashboard() {
     return null;
   }
 
-  const counts = await getRequestCounts(session.user.id, session.user.role);
+  const counts = await getRequestCounts(
+    session.user.id,
+    session.user.role,
+    session.user.site?.id
+  );
 
   return (
     <div className="min-h-screen bg-background">
