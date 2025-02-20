@@ -34,6 +34,11 @@ interface ProcessResult {
   successfulRows: number;
   failedRows: number;
   errors: ValidationError[];
+  requests: Array<{
+    id: string;
+    shipmentNumber: string;
+    defaultPalletCount: number;
+  }>;
 }
 
 type SplitCriteria = "shipment" | "trailer" | "route" | "part";
@@ -184,7 +189,8 @@ async function processRows(
   rows: RowData[],
   userId: string,
   userRole: string,
-  siteId: string | null
+  siteId: string | null,
+  palletCounts: { [key: string]: number }
 ): Promise<ProcessResult> {
   const result: ProcessResult = {
     success: true,
@@ -192,6 +198,7 @@ async function processRows(
     successfulRows: 0,
     failedRows: 0,
     errors: [],
+    requests: [],
   };
 
   for (let i = 0; i < rows.length; i++) {
@@ -219,17 +226,22 @@ async function processRows(
         {}
       );
 
-      const totalPalletCount = row.parts.reduce((acc, part) => {
+      // Calculate default pallet count for this request
+      const defaultPalletCount = row.parts.reduce((acc, part) => {
         return acc + Math.ceil(part.quantity / 24);
       }, 0);
 
-      await prisma.$transaction(async (tx) => {
-        const request = await tx.mustGoRequest.create({
+      // Use provided pallet count or default
+      const palletCount =
+        palletCounts[row.shipmentNumber] || defaultPalletCount;
+
+      const request = await prisma.$transaction(async (tx) => {
+        const newRequest = await tx.mustGoRequest.create({
           data: {
             shipmentNumber: row.shipmentNumber,
             plant: row.plant,
             routeInfo: row.routeInfo,
-            palletCount: totalPalletCount,
+            palletCount,
             createdBy: userId,
             siteId: siteId,
             status:
@@ -260,7 +272,7 @@ async function processRows(
             data: {
               request: {
                 connect: {
-                  id: request.id,
+                  id: newRequest.id,
                 },
               },
               trailer: {
@@ -280,7 +292,7 @@ async function processRows(
                   quantity: part.quantity,
                   request: {
                     connect: {
-                      id: request.id,
+                      id: newRequest.id,
                     },
                   },
                   trailer: {
@@ -293,6 +305,15 @@ async function processRows(
             )
           );
         }
+
+        return newRequest;
+      });
+
+      // Add request info to result for UI
+      result.requests.push({
+        id: request.id,
+        shipmentNumber: row.shipmentNumber,
+        defaultPalletCount,
       });
 
       result.successfulRows++;
@@ -369,6 +390,8 @@ export async function POST(request: NextRequest) {
     const file = formData.get("file") as File | null;
     const text = formData.get("text") as string | null;
     const siteId = formData.get("siteId") as string | null;
+    const palletCountsStr = formData.get("palletCounts") as string;
+    const palletCounts = palletCountsStr ? JSON.parse(palletCountsStr) : {};
     const splitCriteria =
       (formData.get("splitCriteria") as SplitCriteria) || "shipment";
 
@@ -408,7 +431,8 @@ export async function POST(request: NextRequest) {
       rows,
       dbUser.id,
       dbUser.role,
-      selectedSiteId
+      selectedSiteId,
+      palletCounts
     );
 
     return NextResponse.json(result);

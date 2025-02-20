@@ -10,6 +10,7 @@ import { Header } from "@/components/header";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth-context";
 import { Site } from "@prisma/client";
+import { PalletCountInput } from "@/components/requests/pallet-count-input";
 import {
   Select,
   SelectContent,
@@ -35,6 +36,11 @@ interface ProcessResult {
     row: number;
     errors: string[];
   }>;
+  requests: Array<{
+    id: string;
+    shipmentNumber: string;
+    defaultPalletCount: number;
+  }>;
 }
 
 type SplitCriteria = "shipment" | "trailer" | "route" | "part";
@@ -51,11 +57,14 @@ export default function BulkUploadPage() {
   const [selectedSite, setSelectedSite] = useState<string>("");
   const [splitCriteria, setSplitCriteria] = useState<SplitCriteria>("shipment");
   const [loading, setLoading] = useState(true);
+  const [palletCounts, setPalletCounts] = useState<{
+    [key: string]: { id: string; count: number };
+  }>({});
 
   useEffect(() => {
     const fetchUserSites = async () => {
       try {
-        if (!user) return;
+        if (!user?.id) return;
         const response = await fetch(`/api/users/${user.id}`);
         if (!response.ok) throw new Error("Failed to fetch user sites");
         const userData = await response.json();
@@ -90,8 +99,24 @@ export default function BulkUploadPage() {
       }
     };
 
-    fetchUserSites();
-  }, [user, toast]);
+    if (user?.id) {
+      fetchUserSites();
+    }
+  }, [user?.id]);
+
+  // Initialize pallet counts when result changes
+  useEffect(() => {
+    if (result?.requests) {
+      const initialCounts = result.requests.reduce((acc, req) => {
+        acc[req.shipmentNumber] = {
+          id: req.id,
+          count: req.defaultPalletCount,
+        };
+        return acc;
+      }, {} as { [key: string]: { id: string; count: number } });
+      setPalletCounts(initialCounts);
+    }
+  }, [result]);
 
   async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>,
@@ -116,6 +141,7 @@ export default function BulkUploadPage() {
     formData.append("splitCriteria", splitCriteria);
     formData.append("type", type);
     formData.append("siteId", selectedSite);
+    formData.append("palletCounts", JSON.stringify(palletCounts));
 
     try {
       const response = await fetch("/api/bulk-upload", {
@@ -158,11 +184,63 @@ export default function BulkUploadPage() {
     }
   }
 
+  async function handleSavePalletCounts() {
+    try {
+      // Filter out any zero or undefined pallet counts
+      const validPalletCounts = Object.entries(palletCounts).reduce(
+        (acc, [_, data]) => {
+          if (data.count > 0) {
+            acc[data.id] = data.count;
+          }
+          return acc;
+        },
+        {} as { [key: string]: number }
+      );
+
+      if (Object.keys(validPalletCounts).length === 0) {
+        toast({
+          title: "Warning",
+          description: "No valid pallet counts to update",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const response = await fetch("/api/requests/bulk-pallet-count", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ palletCounts: validPalletCounts }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update pallet counts");
+      }
+
+      toast({
+        title: "Success",
+        description: "Pallet counts updated successfully",
+      });
+
+      router.push("/requests");
+    } catch (error) {
+      console.error("Failed to update pallet counts:", error);
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to update pallet counts",
+        variant: "destructive",
+      });
+    }
+  }
+
   function handleCloseModal() {
     setShowResultModal(false);
-    if (result?.success) {
-      router.push("/requests");
-    }
   }
 
   return (
@@ -231,7 +309,6 @@ export default function BulkUploadPage() {
                 <SelectItem value="route">
                   Split by Route Information
                 </SelectItem>
-                <SelectItem value="part">Split by Part Number</SelectItem>
               </SelectContent>
             </Select>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -375,6 +452,34 @@ export default function BulkUploadPage() {
                   ) : null}
                 </div>
 
+                {result?.requests && (
+                  <div className="mt-4">
+                    <h3 className="font-medium mb-2">Pallet Counts</h3>
+                    <div className="max-h-[200px] overflow-y-auto">
+                      {result.requests.map((request) => (
+                        <PalletCountInput
+                          key={request.shipmentNumber}
+                          shipmentNumber={request.shipmentNumber}
+                          defaultCount={request.defaultPalletCount}
+                          value={
+                            palletCounts[request.shipmentNumber]?.count ||
+                            request.defaultPalletCount
+                          }
+                          onChange={(value) =>
+                            setPalletCounts((prev) => ({
+                              ...prev,
+                              [request.shipmentNumber]: {
+                                id: request.id,
+                                count: value,
+                              },
+                            }))
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {result?.errors && result.errors.length > 0 && (
                   <div className="mt-4">
                     <p className="font-medium mb-2">Issues Found:</p>
@@ -393,9 +498,16 @@ export default function BulkUploadPage() {
             </div>
 
             <DialogFooter>
-              <Button onClick={handleCloseModal}>
-                {result?.success ? "Go to Requests" : "Close"}
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:justify-end">
+                <Button variant="outline" onClick={handleCloseModal}>
+                  Cancel
+                </Button>
+                {result?.success && (
+                  <Button onClick={handleSavePalletCounts}>
+                    Save & Go to Requests
+                  </Button>
+                )}
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
