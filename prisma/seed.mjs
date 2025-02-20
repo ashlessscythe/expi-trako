@@ -44,6 +44,11 @@ const argv = yargs(hideBin(process.argv))
     type: "number",
     description: "Number of additional requests to add to existing database",
   })
+  .option("noreq", {
+    type: "boolean",
+    description: "Skip request creation, only create default site and users",
+    default: false,
+  })
   .check((argv) => {
     if ((argv.clear || argv["clear-data"]) && !argv.destructive) {
       throw new Error("Destructive operations require --destructive flag");
@@ -406,119 +411,124 @@ async function main() {
     );
   }
 
-  // Create must-go requests with trailers and parts
-  const requests = [];
+  // Skip request creation if --noreq flag is present
+  if (!argv.noreq) {
+    // Create must-go requests with trailers and parts
+    const requests = [];
 
-  // Generate dates for the specified number of days with max requests per day
-  const dayCount =
-    argv["add-request"] !== undefined ? argv["add-request"] : argv.count;
-  const maxRequestsPerDay = argv.multiplier || 5; // Default to 5 requests per day max
-  const dates = generateDates(dayCount, maxRequestsPerDay);
+    // Generate dates for the specified number of days with max requests per day
+    const dayCount =
+      argv["add-request"] !== undefined ? argv["add-request"] : argv.count;
+    const maxRequestsPerDay = argv.multiplier || 5; // Default to 5 requests per day max
+    const dates = generateDates(dayCount, maxRequestsPerDay);
 
-  // Create requests for each timestamp
-  for (const createdAt of dates) {
-    // Generate 1-3 parts with quantities
-    const partCount = faker.number.int({ min: 1, max: 3 });
-    const selectedParts = Array.from(
-      { length: partCount },
-      generatePartWithQuantity
-    );
+    // Create requests for each timestamp
+    for (const createdAt of dates) {
+      // Generate 1-3 parts with quantities
+      const partCount = faker.number.int({ min: 1, max: 3 });
+      const selectedParts = Array.from(
+        { length: partCount },
+        generatePartWithQuantity
+      );
 
-    // Calculate total pallet count based on quantities
-    const totalPalletCount = selectedParts.reduce((acc, part) => {
-      return acc + Math.ceil(part.quantity / 24);
-    }, 0);
+      // Calculate total pallet count based on quantities
+      const totalPalletCount = selectedParts.reduce((acc, part) => {
+        return acc + Math.ceil(part.quantity / 24);
+      }, 0);
 
-    // Generate 1-3 random notes
-    const noteCount = faker.number.int({ min: 1, max: 3 });
-    const selectedNotes = Array.from({ length: noteCount }, generateNote);
+      // Generate 1-3 random notes
+      const noteCount = faker.number.int({ min: 1, max: 3 });
+      const selectedNotes = Array.from({ length: noteCount }, generateNote);
 
-    // Create trailer first
-    const trailer = await prisma.trailer.create({
-      data: {
-        trailerNumber: generateTrailerNumber(),
-        createdAt,
-        updatedAt: createdAt,
-      },
-    });
-
-    // Create request
-    const request = await prisma.mustGoRequest.create({
-      data: {
-        shipmentNumber: faker.string.alphanumeric({
-          length: 10,
-          casing: "upper",
-        }),
-        siteId: defaultSite.id,
-        plant: faker.helpers.arrayElement(["FS22", "PL45", "WH23", "DK89"]),
-        palletCount: totalPalletCount,
-        status:
-          requestStatuses[Math.floor(Math.random() * requestStatuses.length)],
-        routeInfo: faker.location.streetAddress(),
-        additionalNotes: selectedNotes.join(" | "),
-        notes: selectedNotes,
-        createdBy:
-          createdUsers[Math.floor(Math.random() * createdUsers.length)].id,
-        trailers: {
-          create: {
-            trailer: {
-              connect: {
-                id: trailer.id,
-              },
-            },
-            isTransload: Math.random() < 0.5, // 50% chance
-            status:
-              itemStatuses[Math.floor(Math.random() * itemStatuses.length)],
-            createdAt,
-          },
+      // Create trailer first
+      const trailer = await prisma.trailer.create({
+        data: {
+          trailerNumber: generateTrailerNumber(),
+          createdAt,
+          updatedAt: createdAt,
         },
-        createdAt,
-        updatedAt: createdAt,
-      },
-    });
+      });
 
-    // Create part details linked to both request and trailer
-    const parts = await Promise.all(
-      selectedParts.map((part) =>
-        prisma.partDetail.create({
-          data: {
-            partNumber: part.partNumber,
-            quantity: part.quantity,
-            request: {
-              connect: {
-                id: request.id,
+      // Create request
+      const request = await prisma.mustGoRequest.create({
+        data: {
+          shipmentNumber: faker.string.alphanumeric({
+            length: 10,
+            casing: "upper",
+          }),
+          siteId: defaultSite.id,
+          plant: faker.helpers.arrayElement(["FS22", "PL45", "WH23", "DK89"]),
+          palletCount: totalPalletCount,
+          status:
+            requestStatuses[Math.floor(Math.random() * requestStatuses.length)],
+          routeInfo: faker.location.streetAddress(),
+          additionalNotes: selectedNotes.join(" | "),
+          notes: selectedNotes,
+          createdBy:
+            createdUsers[Math.floor(Math.random() * createdUsers.length)].id,
+          trailers: {
+            create: {
+              trailer: {
+                connect: {
+                  id: trailer.id,
+                },
               },
+              isTransload: Math.random() < 0.5, // 50% chance
+              status:
+                itemStatuses[Math.floor(Math.random() * itemStatuses.length)],
+              createdAt,
             },
-            trailer: {
-              connect: {
-                id: trailer.id,
-              },
-            },
-            status:
-              itemStatuses[Math.floor(Math.random() * itemStatuses.length)],
-            createdAt,
-            updatedAt: createdAt,
           },
-        })
-      )
+          createdAt,
+          updatedAt: createdAt,
+        },
+      });
+
+      // Create part details linked to both request and trailer
+      const parts = await Promise.all(
+        selectedParts.map((part) =>
+          prisma.partDetail.create({
+            data: {
+              partNumber: part.partNumber,
+              quantity: part.quantity,
+              request: {
+                connect: {
+                  id: request.id,
+                },
+              },
+              trailer: {
+                connect: {
+                  id: trailer.id,
+                },
+              },
+              status:
+                itemStatuses[Math.floor(Math.random() * itemStatuses.length)],
+              createdAt,
+              updatedAt: createdAt,
+            },
+          })
+        )
+      );
+
+      // Create initial log
+      await prisma.requestLog.create({
+        data: {
+          mustGoRequestId: request.id,
+          action: `Request created with ${parts.length} part number(s)`,
+          performedBy:
+            createdUsers[Math.floor(Math.random() * createdUsers.length)].id,
+          timestamp: createdAt,
+        },
+      });
+
+      requests.push({ ...request, parts });
+    }
+    console.log(
+      `Created ${requests.length} must-go requests with trailers and parts`
     );
-
-    // Create initial log
-    await prisma.requestLog.create({
-      data: {
-        mustGoRequestId: request.id,
-        action: `Request created with ${parts.length} part number(s)`,
-        performedBy:
-          createdUsers[Math.floor(Math.random() * createdUsers.length)].id,
-        timestamp: createdAt,
-      },
-    });
-
-    requests.push({ ...request, parts });
+  } else {
+    console.log("Skipping request creation (--noreq flag present)");
   }
-  console.log(
-    `Created ${requests.length} must-go requests with trailers and parts`
-  );
 
   console.log("Seed completed successfully");
 

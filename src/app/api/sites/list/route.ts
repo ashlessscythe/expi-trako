@@ -4,13 +4,16 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const sites = await prisma.site.findMany({
+      where: {
+        isActive: true,
+      },
       select: {
         id: true,
         name: true,
         locationCode: true,
       },
       orderBy: {
-        name: 'asc',
+        name: "asc",
       },
     });
 
