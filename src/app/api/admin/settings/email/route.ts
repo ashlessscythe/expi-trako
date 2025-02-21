@@ -1,42 +1,31 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
-import { prisma } from "@/lib/prisma";
-import { isAdmin } from "@/lib/auth";
-import type { AuthUser, SessionUser } from "@/lib/types";
 
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as SessionUser;
-    const authUser: AuthUser = {
-      id: user.id,
-      role: user.role,
-    };
-
-    if (!isAdmin(authUser)) {
+    if (!session?.user || session.user.role !== "ADMIN") {
       return NextResponse.json(
-        { error: "Only admins can access settings" },
-        { status: 403 }
+        { error: "Unauthorized" },
+        { status: 401 }
       );
     }
 
-    // Get the setting from the database
-    const setting = await prisma.systemSetting.findUnique({
-      where: { key: "sendCompletionEmails" },
+    const settings = await prisma.systemSetting.findMany({
+      where: {
+        key: {
+          in: ["sendCompletionEmails", "sendNewUserEmails"]
+        }
+      }
     });
 
-    return NextResponse.json({
-      sendCompletionEmails: setting?.value === "true",
-    });
+    return NextResponse.json(settings);
   } catch (error) {
-    console.error("Failed to fetch email settings");
+    console.error("Failed to fetch email settings:", error);
     return NextResponse.json(
-      { error: "Failed to fetch email settings" },
+      { error: "Failed to fetch settings" },
       { status: 500 }
     );
   }
@@ -45,48 +34,34 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const user = session.user as SessionUser;
-    const authUser: AuthUser = {
-      id: user.id,
-      role: user.role,
-    };
-
-    if (!isAdmin(authUser)) {
+    if (!session?.user || session.user.role !== "ADMIN") {
       return NextResponse.json(
-        { error: "Only admins can update settings" },
-        { status: 403 }
+        { error: "Unauthorized" },
+        { status: 401 }
       );
     }
 
-    const body = await req.json();
-    const { sendCompletionEmails } = body;
+    const { key, value } = await req.json();
 
-    if (typeof sendCompletionEmails !== "boolean") {
+    if (!key || value === undefined) {
       return NextResponse.json(
-        { error: "Invalid setting value" },
+        { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
     // Update or create the setting
-    await prisma.systemSetting.upsert({
-      where: { key: "sendCompletionEmails" },
-      update: { value: String(sendCompletionEmails) },
-      create: {
-        key: "sendCompletionEmails",
-        value: String(sendCompletionEmails),
-      },
+    const setting = await prisma.systemSetting.upsert({
+      where: { key },
+      update: { value },
+      create: { key, value }
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json(setting);
   } catch (error) {
-    console.error("Failed to update email settings");
+    console.error("Failed to update email settings:", error);
     return NextResponse.json(
-      { error: "Failed to update email settings" },
+      { error: "Failed to update settings" },
       { status: 500 }
     );
   }

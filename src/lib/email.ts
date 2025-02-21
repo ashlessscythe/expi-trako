@@ -2,6 +2,22 @@ import { Resend } from "resend";
 import { APP_NAME, EMAIL_AT } from "./config";
 import { ReactElement } from "react";
 
+// Rate limiting - 1 email per second
+let lastEmailSentAt = 0;
+const EMAIL_RATE_LIMIT_MS = 1000;
+
+async function waitForRateLimit() {
+  const now = Date.now();
+  const timeSinceLastEmail = now - lastEmailSentAt;
+  
+  if (timeSinceLastEmail < EMAIL_RATE_LIMIT_MS) {
+    await new Promise(resolve => 
+      setTimeout(resolve, EMAIL_RATE_LIMIT_MS - timeSinceLastEmail)
+    );
+  }
+  lastEmailSentAt = Date.now();
+}
+
 // Initialize Resend only if API key is present
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
@@ -26,11 +42,12 @@ export async function sendEmail({ to, subject, react, from }: SendEmailParams) {
     return { data: { id: "mock-email-id" }, error: null };
   }
 
-  // Send real email using Resend
+  // Send real email using Resend with rate limiting
   try {
+    await waitForRateLimit();
     const result = await resend.emails.send({
       from: from || defaultFrom,
-      to,
+      to, // Resend supports multiple recipients
       subject,
       react,
     });

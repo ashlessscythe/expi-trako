@@ -8,7 +8,10 @@ import { useState, useEffect } from "react";
 
 export function EmailSettingsCard() {
   const { toast } = useToast();
-  const [sendCompletionEmails, setSendCompletionEmails] = useState(true);
+  const [settings, setSettings] = useState({
+    sendCompletionEmails: true,
+    sendNewUserEmails: true
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,7 +20,12 @@ export function EmailSettingsCard() {
         const response = await fetch("/api/admin/settings/email");
         if (!response.ok) throw new Error("Failed to fetch settings");
         const data = await response.json();
-        setSendCompletionEmails(data.sendCompletionEmails);
+        
+        // Convert string values to booleans
+        setSettings({
+          sendCompletionEmails: data.find((s: any) => s.key === "sendCompletionEmails")?.value === "true",
+          sendNewUserEmails: data.find((s: any) => s.key === "sendNewUserEmails")?.value === "true"
+        });
       } catch (error) {
         toast({
           title: "Error",
@@ -32,22 +40,30 @@ export function EmailSettingsCard() {
     fetchSettings();
   }, [toast]);
 
-  const handleToggle = async (checked: boolean) => {
+  const updateSetting = async (key: string, checked: boolean) => {
     try {
       const response = await fetch("/api/admin/settings/email", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ sendCompletionEmails: checked }),
+        body: JSON.stringify({
+          key,
+          value: checked.toString(),
+          type: "boolean"
+        }),
       });
 
       if (!response.ok) throw new Error("Failed to update settings");
 
-      setSendCompletionEmails(checked);
+      setSettings(prev => ({
+        ...prev,
+        [key === "sendCompletionEmails" ? "sendCompletionEmails" : "sendNewUserEmails"]: checked
+      }));
+
       toast({
         title: "Success",
-        description: `Completion emails ${checked ? "enabled" : "disabled"}`,
+        description: `${key === "sendCompletionEmails" ? "Completion" : "New user"} emails ${checked ? "enabled" : "disabled"}`,
       });
     } catch (error) {
       toast({
@@ -81,8 +97,18 @@ export function EmailSettingsCard() {
           </Label>
           <Switch
             id="completion-emails"
-            checked={sendCompletionEmails}
-            onCheckedChange={handleToggle}
+            checked={settings.sendCompletionEmails}
+            onCheckedChange={(checked) => updateSetting("sendCompletionEmails", checked)}
+          />
+        </div>
+        <div className="flex items-center justify-between space-x-4">
+          <Label htmlFor="new-user-emails">
+            Send emails when new users register
+          </Label>
+          <Switch
+            id="new-user-emails"
+            checked={settings.sendNewUserEmails}
+            onCheckedChange={(checked) => updateSetting("sendNewUserEmails", checked)}
           />
         </div>
       </CardContent>
