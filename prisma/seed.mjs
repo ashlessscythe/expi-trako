@@ -159,8 +159,20 @@ function generatePartWithQuantity() {
   return { partNumber, quantity };
 }
 
-// Track used trailer numbers to ensure uniqueness
+// Track used numbers to ensure uniqueness
 const usedTrailerNumbers = new Set();
+const usedAuthNumbers = new Set();
+
+// Helper function to generate unique authorization number
+function generateAuthNumber() {
+  let authNumber;
+  do {
+    authNumber = faker.string.alphanumeric(10).toUpperCase();
+  } while (usedAuthNumbers.has(authNumber));
+
+  usedAuthNumbers.add(authNumber);
+  return authNumber;
+}
 
 // Helper function to generate unique trailer number
 function generateTrailerNumber() {
@@ -488,6 +500,7 @@ async function main() {
             length: 10,
             casing: "upper",
           }),
+          authorizationNumber: generateAuthNumber(),
           siteId: defaultSite.id,
           plant: faker.helpers.arrayElement(["FS22", "PL45", "WH23", "DK89"]),
           palletCount: totalPalletCount,

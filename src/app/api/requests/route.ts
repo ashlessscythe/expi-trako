@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { RequestStatus, Prisma } from "@prisma/client";
+import { faker } from "@faker-js/faker";
 import { authOptions } from "@/lib/auth-config";
+
+import { generateUniqueAuthNumber } from "@/hooks/useAuthNumber";
 import { isCustomerService, isAdmin, isWarehouse } from "@/lib/auth";
 import type { AuthUser, SessionUser, FormData } from "@/lib/types";
 
@@ -229,6 +232,9 @@ export async function POST(req: Request) {
     // Create everything in a transaction to ensure data consistency
     const result = await prisma.$transaction(async (tx) => {
       // Create the request first
+      // Generate unique authorization number
+      const authorizationNumber = await generateUniqueAuthNumber(tx);
+
       const request = await tx.mustGoRequest.create({
         data: {
           shipmentNumber,
@@ -236,6 +242,7 @@ export async function POST(req: Request) {
           palletCount,
           routeInfo,
           additionalNotes,
+          authorizationNumber,
           createdBy: dbUser.id,
           // Use old site relationship first, then first site from userSites if available
           siteId: dbUser.site?.id || dbUser.userSites[0]?.site.id || null,

@@ -3,6 +3,7 @@ import * as XLSX from "xlsx";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
+import { generateUniqueAuthNumber } from "@/hooks/useAuthNumber";
 import { isCustomerService, isAdmin, isWarehouse } from "@/lib/auth";
 import type { SessionUser, AuthUser } from "@/lib/types";
 import { RequestStatus } from "@prisma/client";
@@ -236,12 +237,16 @@ async function processRows(
         palletCounts[row.shipmentNumber] || defaultPalletCount;
 
       const request = await prisma.$transaction(async (tx) => {
+        // Generate unique authorization number using the hook
+        const authorizationNumber = await generateUniqueAuthNumber(tx);
+
         const newRequest = await tx.mustGoRequest.create({
           data: {
             shipmentNumber: row.shipmentNumber,
             plant: row.plant,
             routeInfo: row.routeInfo,
             palletCount,
+            authorizationNumber,
             createdBy: userId,
             siteId: siteId,
             status:
