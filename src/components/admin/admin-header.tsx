@@ -25,7 +25,7 @@ export function AdminHeader() {
   );
 
   return (
-    <div className="border-b">
+    <div className="border-b sticky top-0 bg-background z-50">
       <div className="container flex h-14 items-center">
         <nav className="flex gap-6">
           {authorizedLinks.map((link) => (

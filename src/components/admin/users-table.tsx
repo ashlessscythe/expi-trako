@@ -49,9 +49,9 @@ export function UsersTable({ users, sites, onRoleChange }: UsersTableProps) {
       <div className="md:hidden space-y-4">{users.map(renderUserCard)}</div>
 
       {/* Desktop table view */}
-      <div className="hidden md:block border rounded-lg">
+      <div className="hidden md:block border rounded-lg overflow-hidden">
         <Table>
-          <TableHeader>
+          <TableHeader className="sticky top-0 bg-background z-10 border-b">
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
