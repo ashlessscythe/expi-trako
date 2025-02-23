@@ -163,3 +163,7 @@ BUG FIXES:
 - [X] Fix reports page transload counting to use non-overlapping date ranges
 - [X] Add date range selection for volume and transload reports
 - [X] Fix auto refresh to honor showAll flag in requests list
+- [X] Refactor request-list component into smaller, more maintainable pieces:
+  * Split into RequestTable, RequestCard, RequestFilters, RequestPagination components
+  * Extract filter and pagination logic into custom hooks
+  * Improve type safety and code organization
