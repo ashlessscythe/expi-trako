@@ -11,6 +11,7 @@ import { Prisma } from "@prisma/client";
  */
 export async function generateUniqueAuthNumber(
   tx: Prisma.TransactionClient,
+  userId: string,
   length: number = 10,
   maxAttempts: number = 10
 ): Promise<string> {
@@ -19,16 +20,37 @@ export async function generateUniqueAuthNumber(
   while (attempts < maxAttempts) {
     const authNumber = faker.string.alphanumeric(length).toUpperCase();
 
-    // Check if this number already exists
-    const existing = await tx.mustGoRequest.findFirst({
-      where: { authorizationNumber: authNumber },
-    });
+    try {
+      // Attempt to create a request with this auth number
+      // If it fails due to uniqueness constraint, catch and try again
+      await tx.mustGoRequest.create({
+        data: {
+          authorizationNumber: authNumber,
+          // Add required fields with placeholder values that will be updated
+          // in the actual request creation
+          shipmentNumber: "TEMP",
+          createdBy: userId,
+          status: "PENDING",
+          palletCount: 1, // Required field, using placeholder value
+        },
+      });
 
-    if (!existing) {
+      // If successful, delete the temporary request
+      await tx.mustGoRequest.delete({
+        where: { authorizationNumber: authNumber },
+      });
+
       return authNumber;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          // P2002 is Prisma's error code for unique constraint violation
+          attempts++;
+          continue;
+        }
+      }
+      throw error; // Re-throw any other errors
     }
-
-    attempts++;
   }
 
   throw new Error(

@@ -233,7 +233,7 @@ export async function POST(req: Request) {
     const result = await prisma.$transaction(async (tx) => {
       // Create the request first
       // Generate unique authorization number
-      const authorizationNumber = await generateUniqueAuthNumber(tx);
+      const authorizationNumber = await generateUniqueAuthNumber(tx, dbUser.id);
 
       const request = await tx.mustGoRequest.create({
         data: {

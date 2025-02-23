@@ -159,19 +159,48 @@ function generatePartWithQuantity() {
   return { partNumber, quantity };
 }
 
-// Track used numbers to ensure uniqueness
+// Track used trailer numbers to ensure uniqueness
 const usedTrailerNumbers = new Set();
-const usedAuthNumbers = new Set();
 
-// Helper function to generate unique authorization number
-function generateAuthNumber() {
-  let authNumber;
-  do {
-    authNumber = faker.string.alphanumeric(10).toUpperCase();
-  } while (usedAuthNumbers.has(authNumber));
+// Helper function to generate unique authorization number using transactions
+async function generateUniqueAuthNumber(tx, userId, length = 10, maxAttempts = 10) {
+  let attempts = 0;
 
-  usedAuthNumbers.add(authNumber);
-  return authNumber;
+  while (attempts < maxAttempts) {
+    const authNumber = faker.string.alphanumeric(length).toUpperCase();
+
+    try {
+      // Attempt to create a request with this auth number
+      await tx.mustGoRequest.create({
+        data: {
+          authorizationNumber: authNumber,
+          // Add required fields with placeholder values
+          shipmentNumber: "TEMP",
+          createdBy: userId,
+          status: "PENDING",
+          palletCount: 1,
+        },
+      });
+
+      // If successful, delete the temporary request
+      await tx.mustGoRequest.delete({
+        where: { authorizationNumber: authNumber },
+      });
+
+      return authNumber;
+    } catch (error) {
+      if (error.code === "P2002") {
+        // P2002 is Prisma's error code for unique constraint violation
+        attempts++;
+        continue;
+      }
+      throw error; // Re-throw any other errors
+    }
+  }
+
+  throw new Error(
+    "Failed to generate unique authorization number after maximum attempts"
+  );
 }
 
 // Helper function to generate unique trailer number
@@ -493,40 +522,48 @@ async function main() {
         },
       });
 
-      // Create request
-      const request = await prisma.mustGoRequest.create({
-        data: {
-          shipmentNumber: faker.string.alphanumeric({
-            length: 10,
-            casing: "upper",
-          }),
-          authorizationNumber: generateAuthNumber(),
-          siteId: defaultSite.id,
-          plant: faker.helpers.arrayElement(["FS22", "PL45", "WH23", "DK89"]),
-          palletCount: totalPalletCount,
-          status:
-            requestStatuses[Math.floor(Math.random() * requestStatuses.length)],
-          routeInfo: faker.location.streetAddress(),
-          additionalNotes: selectedNotes.join(" | "),
-          notes: selectedNotes,
-          createdBy:
-            createdUsers[Math.floor(Math.random() * createdUsers.length)].id,
-          trailers: {
-            create: {
-              trailer: {
-                connect: {
-                  id: trailer.id,
+      // Create request in a transaction
+      const request = await prisma.$transaction(async (tx) => {
+        // Get a random user ID for the auth number generation
+        const userId = createdUsers[Math.floor(Math.random() * createdUsers.length)].id;
+        
+        // Generate unique auth number inside transaction
+        const authorizationNumber = await generateUniqueAuthNumber(tx, userId);
+
+        return tx.mustGoRequest.create({
+          data: {
+            shipmentNumber: faker.string.alphanumeric({
+              length: 10,
+              casing: "upper",
+            }),
+            authorizationNumber,
+            siteId: defaultSite.id,
+            plant: faker.helpers.arrayElement(["FS22", "PL45", "WH23", "DK89"]),
+            palletCount: totalPalletCount,
+            status:
+              requestStatuses[Math.floor(Math.random() * requestStatuses.length)],
+            routeInfo: faker.location.streetAddress(),
+            additionalNotes: selectedNotes.join(" | "),
+            notes: selectedNotes,
+            createdBy:
+              createdUsers[Math.floor(Math.random() * createdUsers.length)].id,
+            trailers: {
+              create: {
+                trailer: {
+                  connect: {
+                    id: trailer.id,
+                  },
                 },
+                isTransload: Math.random() < 0.5, // 50% chance
+                status:
+                  itemStatuses[Math.floor(Math.random() * itemStatuses.length)],
+                createdAt,
               },
-              isTransload: Math.random() < 0.5, // 50% chance
-              status:
-                itemStatuses[Math.floor(Math.random() * itemStatuses.length)],
-              createdAt,
             },
+            createdAt,
+            updatedAt: createdAt,
           },
-          createdAt,
-          updatedAt: createdAt,
-        },
+        });
       });
 
       // Create part details linked to both request and trailer

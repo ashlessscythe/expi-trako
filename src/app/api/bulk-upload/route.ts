@@ -238,7 +238,7 @@ async function processRows(
 
       const request = await prisma.$transaction(async (tx) => {
         // Generate unique authorization number using the hook
-        const authorizationNumber = await generateUniqueAuthNumber(tx);
+        const authorizationNumber = await generateUniqueAuthNumber(tx, userId);
 
         const newRequest = await tx.mustGoRequest.create({
           data: {
