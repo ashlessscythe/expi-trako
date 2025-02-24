@@ -1,12 +1,46 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RequestInfoCardProps } from "./types";
+import { useEffect, useState } from "react";
+
+interface Settings {
+  costPerPallet: number;
+  enableCostCalculation: boolean;
+}
 
 export function RequestInfoCard({
   request,
   canUpdateStatus,
   onEditStatus,
 }: RequestInfoCardProps) {
+  const [settings, setSettings] = useState<Settings>({
+    costPerPallet: 0,
+    enableCostCalculation: false,
+  });
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch("/api/admin/settings");
+        if (!response.ok) throw new Error("Failed to fetch settings");
+        const data = await response.json();
+
+        setSettings({
+          costPerPallet: Number(
+            data.find((s: any) => s.key === "costPerPallet")?.value || 0
+          ),
+          enableCostCalculation:
+            data.find((s: any) => s.key === "enableCostCalculation")?.value ===
+            "true",
+        });
+      } catch (error) {
+        console.error("Failed to load settings:", error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
   return (
     <Card className="lg:col-span-2">
       <CardHeader>
@@ -40,7 +74,15 @@ export function RequestInfoCard({
         </div>
         <div>
           <div className="text-sm text-muted-foreground">Pallet Count</div>
-          <div className="font-medium">{request.palletCount}</div>
+          <div className="font-medium">
+            {request.palletCount}
+            {settings.enableCostCalculation && settings.costPerPallet > 0 && (
+              <div className="text-sm text-muted-foreground mt-1">
+                Cost: $
+                {(request.palletCount * settings.costPerPallet).toFixed(2)}
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
