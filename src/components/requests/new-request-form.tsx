@@ -51,6 +51,7 @@ export default function NewRequestForm({
   const [formData, setFormData] = useState<FormData & { siteId?: string }>({
     shipmentNumber: "",
     plant: "",
+    authorizationNumber: "",
     trailers: [],
     palletCount: 1,
     routeInfo: "",
@@ -284,6 +285,18 @@ export default function NewRequestForm({
           pattern="[a-zA-Z0-9]{4}"
           title="Plant code must be exactly 4 alphanumeric characters"
           maxLength={4}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="plant">Authorization Number</Label>
+        <Input
+          id="authorizationNumber"
+          name="authorizationNumber"
+          value={formData.authorizationNumber || ""}
+          onChange={handleChange}
+          placeholder="Enter Authorization Number (Optional)"
+          title="Authorization Number will be generated automatically if not entered"
         />
       </div>
 

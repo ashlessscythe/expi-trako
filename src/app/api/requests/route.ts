@@ -229,11 +229,29 @@ export async function POST(req: Request) {
       }
     }
 
+    // Check for duplicate authorization number before starting transaction
+    if (body.authorizationNumber) {
+      const existingRequest = await prisma.mustGoRequest.findUnique({
+        where: { authorizationNumber: body.authorizationNumber },
+      });
+      if (existingRequest) {
+        return NextResponse.json(
+          {
+            error:
+              "This authorization number is already in use. Please provide a unique number or leave blank to auto-generate.",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Create everything in a transaction to ensure data consistency
     const result = await prisma.$transaction(async (tx) => {
       // Create the request first
-      // Generate unique authorization number
-      const authorizationNumber = await generateUniqueAuthNumber(tx, dbUser.id);
+      // Only generate authorization number if not provided
+      const authorizationNumber =
+        body.authorizationNumber ||
+        (await generateUniqueAuthNumber(tx, dbUser.id));
 
       const request = await tx.mustGoRequest.create({
         data: {
@@ -337,10 +355,13 @@ export async function POST(req: Request) {
     );
     return response;
   } catch (error) {
-    console.error("Failed to create request");
+    console.error("Failed to create request:", error);
     return NextResponse.json(
-      { error: "Failed to create request" },
-      { status: 500 }
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to create request",
+      },
+      { status: 400 }
     );
   }
 }
