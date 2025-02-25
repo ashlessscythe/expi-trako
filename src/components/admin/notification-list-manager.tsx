@@ -37,6 +37,7 @@ export function NotificationListManager() {
     useState<NotificationList | null>(null);
   const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
   const [plants, setPlants] = useState<string[]>([]);
+  const [enabled, setEnabled] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Load sites on component mount
@@ -136,6 +137,7 @@ export function NotificationListManager() {
           siteId: selectedSite,
           plant: selectedPlant,
           emails: newEmails,
+          enabled: notificationList?.enabled ?? false,
         }),
       });
 
@@ -174,6 +176,7 @@ export function NotificationListManager() {
           emails: notificationList.emails.filter(
             (email) => email !== emailToRemove
           ),
+          enabled: notificationList.enabled,
         }),
       });
 
