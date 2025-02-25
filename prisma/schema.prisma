@@ -23,6 +23,8 @@ model Site {
   userSites       UserSite[]
   // Keep old relation for backwards compatibility
   users           User[]          
+  // Plant notification lists
+  plantNotificationLists PlantNotificationList[]
 }
 
 model User {
@@ -145,6 +147,19 @@ model SystemSetting {
   value       String
   type        String @default("string")
   description String?
+}
+
+model PlantNotificationList {
+  id        String   @id @default(cuid())
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  plant     String   // Plant name/code
+  emails    String[] // Array of email addresses
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([siteId, plant])
+  @@index([siteId])
 }
 
 enum ItemStatus {

@@ -8,6 +8,10 @@ import { authOptions } from "@/lib/auth-config";
 import { generateUniqueAuthNumber } from "@/hooks/useAuthNumber";
 import { isCustomerService, isAdmin, isWarehouse } from "@/lib/auth";
 import type { AuthUser, SessionUser, FormData } from "@/lib/types";
+import { sendEmail } from "@/lib/email";
+import { getPlantNotificationEmails } from "@/lib/notification-lists";
+import { RequestCreatedEmail } from "@/components/request-created-email";
+import { createElement } from "react";
 
 // GET /api/requests - List all requests with optional filters
 export async function GET(req: Request) {
@@ -314,8 +318,7 @@ export async function POST(req: Request) {
         );
       }
 
-      // Return complete request with all relations
-      return tx.mustGoRequest.findUnique({
+      const completeRequest = await tx.mustGoRequest.findUnique({
         where: { id: request.id },
         include: {
           creator: {
@@ -345,6 +348,41 @@ export async function POST(req: Request) {
           },
         },
       });
+
+      // Send notification to plant-specific list if plant and site are specified
+      if (plant && completeRequest?.site?.id && completeRequest.creator) {
+        const notificationEmails = await getPlantNotificationEmails(
+          completeRequest.site.id,
+          plant
+        );
+
+        if (notificationEmails.length > 0) {
+          await sendEmail({
+            to: notificationEmails,
+            subject: `New Request Created - ${shipmentNumber}`,
+            react: createElement(RequestCreatedEmail, {
+              shipmentNumber,
+              plant,
+              authorizationNumber: completeRequest.authorizationNumber,
+              requestDetails: {
+                trailers: completeRequest.trailers.map((rt) => ({
+                  trailerNumber: rt.trailer.trailerNumber,
+                })),
+                parts: completeRequest.partDetails.map((pd) => ({
+                  partNumber: pd.partNumber,
+                  quantity: pd.quantity,
+                })),
+              },
+              creator: {
+                name: completeRequest.creator.name,
+                email: completeRequest.creator.email,
+              },
+            }),
+          });
+        }
+      }
+
+      return completeRequest;
     });
 
     // Add cache control headers to ensure clients revalidate

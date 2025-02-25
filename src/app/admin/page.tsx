@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import prisma from "@/lib/prisma";
 import { EmailSettingsCard } from "@/components/admin/email-settings-card";
 import { CostSettingsCard } from "@/components/admin/cost-settings-card";
+import { NotificationListsCard } from "@/components/admin/notification-lists-card";
 
 async function getAdminStats() {
   const [
@@ -80,9 +81,10 @@ export default async function AdminDashboard() {
       <div className="mt-8 space-y-8">
         <div>
           <h3 className="text-xl font-semibold mb-4">Settings</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <EmailSettingsCard />
             <CostSettingsCard />
+            <NotificationListsCard />
           </div>
         </div>
 
