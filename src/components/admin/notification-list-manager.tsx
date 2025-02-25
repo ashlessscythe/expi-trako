@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 
 type NotificationList = {
@@ -24,6 +25,7 @@ type NotificationList = {
   siteId: string;
   plant: string;
   emails: string[];
+  enabled: boolean;
 };
 
 export function NotificationListManager() {
@@ -263,8 +265,52 @@ export function NotificationListManager() {
               </Button>
             </div>
 
-            <div className="space-y-2">
-              <h4 className="font-medium">Current Notification List</h4>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium">Current Notification List</h4>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm">Enable Notifications</span>
+                  <Switch
+                    checked={notificationList?.enabled ?? false}
+                    onCheckedChange={async (checked) => {
+                      setIsLoading(true);
+                      try {
+                        const response = await fetch(
+                          "/api/notification-lists",
+                          {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              siteId: selectedSite,
+                              plant: selectedPlant,
+                              emails: notificationList?.emails || [],
+                              enabled: checked,
+                            }),
+                          }
+                        );
+
+                        if (!response.ok)
+                          throw new Error("Failed to update notification list");
+
+                        const updatedList = await response.json();
+                        setNotificationList(updatedList);
+                        toast({
+                          title: "Success",
+                          description: `Notifications ${checked ? "enabled" : "disabled"} for this plant`,
+                        });
+                      } catch (error) {
+                        toast({
+                          title: "Error",
+                          description: "Failed to update notification settings",
+                          variant: "destructive",
+                        });
+                      } finally {
+                        setIsLoading(false);
+                      }
+                    }}
+                  />
+                </div>
+              </div>
               {notificationList?.emails.length ? (
                 <div className="space-y-2">
                   {notificationList.emails.map((email) => (

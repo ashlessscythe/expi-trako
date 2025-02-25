@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const siteId = searchParams.get("siteId");
-    const plant = searchParams.get("plant");
+    const plant = searchParams.get("plant")?.toUpperCase();
 
     if (!siteId || !plant) {
       return new NextResponse("Missing required parameters", { status: 400 });
@@ -56,9 +56,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { siteId, plant, emails } = body;
+    const { siteId, plant: rawPlant, emails, enabled } = body;
+    const plant = rawPlant?.toUpperCase();
 
-    if (!siteId || !plant || !emails) {
+    if (!siteId || !plant || !emails || enabled === undefined) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
         siteId,
         plant,
         emails,
+        enabled,
       },
     });
 
@@ -91,9 +93,10 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { siteId, plant, emails } = body;
+    const { siteId, plant: rawPlant, emails, enabled } = body;
+    const plant = rawPlant?.toUpperCase();
 
-    if (!siteId || !plant || !emails) {
+    if (!siteId || !plant || !emails || enabled === undefined) {
       return new NextResponse("Missing required fields", { status: 400 });
     }
 
@@ -108,9 +111,11 @@ export async function PUT(request: NextRequest) {
         siteId,
         plant,
         emails,
+        enabled,
       },
       update: {
         emails,
+        enabled,
       },
     });
 

@@ -7,6 +7,7 @@ import { generateUniqueAuthNumber } from "@/hooks/useAuthNumber";
 import { isCustomerService, isAdmin, isWarehouse } from "@/lib/auth";
 import type { SessionUser, AuthUser } from "@/lib/types";
 import { RequestStatus } from "@prisma/client";
+import { sendCreationNotification } from "@/lib/request-emails";
 
 interface PartData {
   partNumber: string;
@@ -309,6 +310,29 @@ async function processRows(
               })
             )
           );
+        }
+
+        // Get the full request details for notification
+        const requestWithDetails = await tx.mustGoRequest.findUnique({
+          where: { id: newRequest.id },
+          include: {
+            creator: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+            trailers: {
+              include: {
+                trailer: true,
+              },
+            },
+            partDetails: true,
+          },
+        });
+
+        if (requestWithDetails) {
+          await sendCreationNotification(requestWithDetails);
         }
 
         return newRequest;
