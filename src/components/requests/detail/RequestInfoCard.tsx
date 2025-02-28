@@ -77,10 +77,16 @@ export function RequestInfoCard({
           <div className="font-medium">
             {request.palletCount}
             {settings.enableCostCalculation && settings.costPerPallet > 0 && (
-              <div className="text-sm text-muted-foreground mt-1">
-                Cost: $
-                {(request.palletCount * settings.costPerPallet).toFixed(2)}
-              </div>
+              <>
+                <div className="text-sm text-muted-foreground mt-1">
+                  Cost: $
+                  {(request.palletCount * settings.costPerPallet).toFixed(2)}
+                </div>
+                <div className="text-xs italic text-amber-600 mt-1">
+                  * This cost is an estimate and may vary based on actual
+                  handling requirements.
+                </div>
+              </>
             )}
           </div>
         </div>
