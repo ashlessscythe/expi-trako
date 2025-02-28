@@ -115,25 +115,6 @@ export default function RequestList({
     router.refresh();
   };
 
-  const downloadTransloadCSV = async () => {
-    try {
-      const response = await fetch("/api/transloads");
-      if (!response.ok) throw new Error("Failed to download CSV");
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "transloads.csv";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      // Silent fail - error shown to user via UI
-    }
-  };
-
   const downloadAsCSV = () => {
     // Convert filtered requests to CSV format
     const headers = [
@@ -143,6 +124,7 @@ export default function RequestList({
       "Pallet Count",
       "Status",
       "Site",
+      "AuthorizationNumber",
       "Trailer Number",
       "Trailer Status",
       "Is Transload",
@@ -166,6 +148,7 @@ export default function RequestList({
           request.palletCount.toString(),
           request.status,
           request.site?.name || "nosite",
+          "", // Empty Authorization number
           "", // Empty trailer number
           "", // Empty trailer status
           "", // Empty is transload
@@ -204,6 +187,7 @@ export default function RequestList({
             request.palletCount.toString(),
             request.status,
             request.site?.name || "nosite",
+            request.authorizationNumber,
             trailer.trailer.trailerNumber,
             trailer.status,
             trailer.isTransload ? "Yes" : "No",
@@ -224,6 +208,7 @@ export default function RequestList({
               request.palletCount.toString(),
               request.status,
               request.site?.name || "nosite",
+              request.authorizationNumber,
               trailer.trailer.trailerNumber,
               trailer.status,
               trailer.isTransload ? "Yes" : "No",
@@ -294,7 +279,6 @@ export default function RequestList({
         uniquePlants={uniquePlants}
         onClearFilters={clearFilters}
         onDownloadCSV={downloadAsCSV}
-        onDownloadTransloads={downloadTransloadCSV}
         userRole={user.role}
       />
 

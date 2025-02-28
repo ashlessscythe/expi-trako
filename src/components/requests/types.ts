@@ -28,6 +28,7 @@ export interface Request {
     id: string;
     name: string;
   } | null;
+  authorizationNumber: string;
   trailers: {
     id: string;
     requestId: string;

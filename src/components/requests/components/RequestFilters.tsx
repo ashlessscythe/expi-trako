@@ -19,7 +19,6 @@ interface RequestFiltersProps {
   uniquePlants: string[];
   onClearFilters: () => void;
   onDownloadCSV: () => void;
-  onDownloadTransloads: () => void;
   userRole?: string;
 }
 
@@ -29,7 +28,6 @@ export function RequestFilters({
   uniquePlants,
   onClearFilters,
   onDownloadCSV,
-  onDownloadTransloads,
   userRole,
 }: RequestFiltersProps) {
   // Local state for controlled inputs
@@ -157,7 +155,7 @@ export function RequestFilters({
           <Button variant="outline" onClick={onClearFilters} className="text-sm">
             Clear Filters
           </Button>
-          {["ADMIN", "REPORT_RUNNER", "WAREHOUSE"].includes(userRole || "") && (
+            {["ADMIN", "REPORT_RUNNER", "CUSTOMER_SERVICE", "WAREHOUSE"].includes(userRole || "") && (
             <>
               <Button
                 variant="outline"
@@ -165,13 +163,6 @@ export function RequestFilters({
                 className="text-sm"
               >
                 Download CSV
-              </Button>
-              <Button
-                variant="outline"
-                onClick={onDownloadTransloads}
-                className="text-sm"
-              >
-                Download Transloads
               </Button>
             </>
           )}

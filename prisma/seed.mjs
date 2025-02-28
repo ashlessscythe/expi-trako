@@ -40,13 +40,13 @@ const argv = yargs(hideBin(process.argv))
     description:
       "Multiplier for request count (defaults to 5 when count is 10)",
   })
-  .option("add-request", {
+  .option("request-count", {
     type: "number",
     description: "Number of additional requests to add to existing database",
   })
-  .option("noreq", {
+  .option("add-req", {
     type: "boolean",
-    description: "Skip request creation, only create default site and users",
+    description: "Create requests in addition to default site and users",
     default: false,
   })
   .check((argv) => {
@@ -446,7 +446,7 @@ async function main() {
     // Associate existing users with default site
     await associateWithDefaultSite(defaultSite);
     createdUsers = await prisma.user.findMany();
-  } else if (argv["add-request"] !== undefined) {
+  } else if (argv["request-count"] !== undefined) {
     // When adding requests, use existing users
     createdUsers = await prisma.user.findMany();
     console.log(`Using ${createdUsers.length} existing users for new requests`);
@@ -484,14 +484,14 @@ async function main() {
     );
   }
 
-  // Skip request creation if --noreq flag is present
-  if (!argv.noreq) {
+  // Skip request creation if --add-req flag is absent
+  if (argv["add-req"]) {
     // Create must-go requests with trailers and parts
     const requests = [];
 
     // Generate dates for the specified number of days with max requests per day
     const dayCount =
-      argv["add-request"] !== undefined ? argv["add-request"] : argv.count;
+      argv["request-count"] !== undefined ? argv["request-count"] : argv.count;
     const maxRequestsPerDay = argv.multiplier || 5; // Default to 5 requests per day max
     const dates = generateDates(dayCount, maxRequestsPerDay);
 
@@ -609,12 +609,12 @@ async function main() {
       `Created ${requests.length} must-go requests with trailers and parts`
     );
   } else {
-    console.log("Skipping request creation (--noreq flag present)");
+    console.log("Skipping request creation (--add-req flag not included)");
   }
 
   console.log("Seed completed successfully");
 
-  if (!argv["clear-data"] && argv["add-request"] === undefined) {
+  if (!argv["clear-data"] && argv["request-count"] === undefined) {
     console.log("\nDefault user created:");
     console.log("Email: bob@bob.bob");
     console.log("Password: adminpass");
