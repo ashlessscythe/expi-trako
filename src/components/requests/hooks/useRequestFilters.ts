@@ -10,7 +10,8 @@ export function useRequestFilters(initialRequests: Request[]) {
 
   // Filter states
   const [filters, setFiltersState] = useState<FilterState>(() => ({
-    statusFilter: (searchParams.get("status") as RequestStatus | "ALL") || "ALL",
+    statusFilter:
+      (searchParams.get("status") as RequestStatus | "ALL") || "ALL",
     plantFilter: searchParams.get("plant") || "all",
     searchQuery: searchParams.get("search") || "",
     dateRange: {
@@ -32,12 +33,20 @@ export function useRequestFilters(initialRequests: Request[]) {
     return Array.from(plants).sort();
   }, [initialRequests]);
 
+  // Skip initial render reference
+  const isFirstRender = useRef(true);
+
   // Update URL with current filters
   const updateUrlParams = useCallback(
     (updates: Record<string, string | null>) => {
       const params = new URLSearchParams(searchParams.toString());
       Object.entries(updates).forEach(([key, value]) => {
-        if (value === null || value === "" || value === "ALL" || value === "all") {
+        if (
+          value === null ||
+          value === "" ||
+          value === "ALL" ||
+          value === "all"
+        ) {
           params.delete(key);
         } else {
           params.set(key, value);
@@ -57,20 +66,12 @@ export function useRequestFilters(initialRequests: Request[]) {
     [searchParams, router]
   );
 
-  // Skip initial render and debounce URL updates
-  const isFirstRender = useRef(true);
-  const updateTimeoutRef = useRef<NodeJS.Timeout>();
-
+  // Update URL params when filters change
   useEffect(() => {
     // Skip the first render
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
-    }
-
-    // Clear any existing timeout
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
     }
 
     // Create URL update params
@@ -83,17 +84,8 @@ export function useRequestFilters(initialRequests: Request[]) {
       hideCompleted: filters.hideCompleted ? "true" : null,
     };
 
-    // Set new timeout for URL update
-    updateTimeoutRef.current = setTimeout(() => {
-      updateUrlParams(updates);
-    }, 300); // Debounce time
-
-    // Cleanup timeout on unmount or when dependencies change
-    return () => {
-      if (updateTimeoutRef.current) {
-        clearTimeout(updateTimeoutRef.current);
-      }
-    };
+    // Update URL immediately without debouncing
+    updateUrlParams(updates);
   }, [
     filters.statusFilter,
     filters.plantFilter,
@@ -114,7 +106,7 @@ export function useRequestFilters(initialRequests: Request[]) {
       sortField: "createdAt",
       sortDirection: "desc",
     } as const;
-    
+
     setFiltersState(newFilters);
     router.replace(window.location.pathname, { scroll: false });
   }, [router]);
@@ -143,9 +135,11 @@ export function useRequestFilters(initialRequests: Request[]) {
         }
 
         const matchesStatus =
-          filters.statusFilter === "ALL" || request.status === filters.statusFilter;
+          filters.statusFilter === "ALL" ||
+          request.status === filters.statusFilter;
         const matchesPlant =
-          filters.plantFilter === "all" || request.plant === filters.plantFilter;
+          filters.plantFilter === "all" ||
+          request.plant === filters.plantFilter;
         const matchesSearch =
           !filters.searchQuery ||
           request.shipmentNumber
@@ -154,14 +148,18 @@ export function useRequestFilters(initialRequests: Request[]) {
           request.creator.name
             .toLowerCase()
             .includes(filters.searchQuery.toLowerCase()) ||
-          request.routeInfo?.toLowerCase().includes(filters.searchQuery.toLowerCase());
+          request.routeInfo
+            ?.toLowerCase()
+            .includes(filters.searchQuery.toLowerCase());
         const matchesDateRange =
           (!filters.dateRange.start ||
             new Date(request.createdAt) >= new Date(filters.dateRange.start)) &&
           (!filters.dateRange.end ||
             new Date(request.createdAt) <= new Date(filters.dateRange.end));
 
-        return matchesStatus && matchesPlant && matchesSearch && matchesDateRange;
+        return (
+          matchesStatus && matchesPlant && matchesSearch && matchesDateRange
+        );
       })
       .sort((a, b) => {
         let comparison = 0;

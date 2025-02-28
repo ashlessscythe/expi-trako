@@ -35,9 +35,21 @@ export function RequestFilters({
 
   // Debounced filter updates
   const debouncedUpdate = useCallback(
-    debounce((updates: Partial<FilterState>) => {
-      onFiltersChange(updates);
-    }, 300),
+    debounce(
+      (updates: Partial<FilterState>) => {
+        onFiltersChange(updates);
+      },
+      300,
+      false
+    ),
+    [onFiltersChange]
+  );
+
+  // Direct update for search (no debounce)
+  const updateSearch = useCallback(
+    (value: string) => {
+      onFiltersChange({ searchQuery: value });
+    },
     [onFiltersChange]
   );
 
@@ -51,9 +63,9 @@ export function RequestFilters({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       setSearchValue(value);
-      debouncedUpdate({ searchQuery: value });
+      updateSearch(value);
     },
-    [debouncedUpdate]
+    [updateSearch]
   );
 
   const handleStatusChange = useCallback(
@@ -99,10 +111,7 @@ export function RequestFilters({
           onChange={handleSearchChange}
           className="w-full"
         />
-        <Select
-          value={filters.statusFilter}
-          onValueChange={handleStatusChange}
-        >
+        <Select value={filters.statusFilter} onValueChange={handleStatusChange}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select Status" />
           </SelectTrigger>
@@ -115,10 +124,7 @@ export function RequestFilters({
             ))}
           </SelectContent>
         </Select>
-        <Select
-          value={filters.plantFilter}
-          onValueChange={handlePlantChange}
-        >
+        <Select value={filters.plantFilter} onValueChange={handlePlantChange}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select Plant" />
           </SelectTrigger>
@@ -152,10 +158,16 @@ export function RequestFilters({
           initialHideCompleted={filters.hideCompleted}
         />
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onClearFilters} className="text-sm">
+          <Button
+            variant="outline"
+            onClick={onClearFilters}
+            className="text-sm"
+          >
             Clear Filters
           </Button>
-            {["ADMIN", "REPORT_RUNNER", "CUSTOMER_SERVICE", "WAREHOUSE"].includes(userRole || "") && (
+          {["ADMIN", "REPORT_RUNNER", "CUSTOMER_SERVICE", "WAREHOUSE"].includes(
+            userRole || ""
+          ) && (
             <>
               <Button
                 variant="outline"

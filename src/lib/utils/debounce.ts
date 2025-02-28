@@ -5,22 +5,34 @@ type DebouncedFunction<T extends (...args: any[]) => void> = {
 
 export function debounce<T extends (...args: any[]) => void>(
   func: T,
-  wait: number
+  wait: number,
+  immediate = false
 ): DebouncedFunction<T> {
-  let timeout: NodeJS.Timeout;
+  let timeout: NodeJS.Timeout | null = null;
 
   const debouncedFunction = function executedFunction(...args: Parameters<T>) {
     const later = () => {
-      clearTimeout(timeout);
-      func(...args);
+      timeout = null;
+      if (!immediate) {
+        func(...args);
+      }
     };
 
-    clearTimeout(timeout);
+    const callNow = immediate && !timeout;
+
+    if (timeout) clearTimeout(timeout);
     timeout = setTimeout(later, wait);
+
+    if (callNow) {
+      func(...args);
+    }
   } as DebouncedFunction<T>;
 
   debouncedFunction.cancel = () => {
-    clearTimeout(timeout);
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = null;
+    }
   };
 
   return debouncedFunction;
