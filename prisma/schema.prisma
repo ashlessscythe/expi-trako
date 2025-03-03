@@ -155,6 +155,7 @@ model PlantNotificationList {
   site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
   plant     String   // Plant name/code
   emails    String[] // Array of email addresses
+  emailLevels Json?  // Map of email to level: { "email@example.com": "LEVEL1", ... }
   enabled   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -193,4 +194,13 @@ enum RequestStatus {
   ON_HOLD
   CANCELLED
   FAILED
+}
+
+enum ApprovalLevel {
+  LEVEL1 // PC Manager (0-$250)
+  LEVEL2 // Plant Controller ($250-$500)
+  LEVEL3 // Plant Manager ($500-$1,000)
+  LEVEL4 // Regional Controller ($1,000-$2,000)
+  LEVEL5 // Regional Operations ($2,000-$5,000)
+  LEVEL6 // Operations Director (>$5,000)
 }

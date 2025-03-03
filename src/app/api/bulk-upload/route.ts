@@ -7,7 +7,10 @@ import { generateUniqueAuthNumber } from "@/hooks/useAuthNumber";
 import { isCustomerService, isAdmin, isWarehouse } from "@/lib/auth";
 import type { SessionUser, AuthUser } from "@/lib/types";
 import { RequestStatus } from "@prisma/client";
-import { sendCreationNotification } from "@/lib/request-emails";
+import {
+  sendCreationNotification,
+  sendCostApprovalNotifications,
+} from "@/lib/request-emails";
 
 interface PartData {
   partNumber: string;
@@ -332,7 +335,14 @@ async function processRows(
         });
 
         if (requestWithDetails) {
+          // Send initial creation notification
           await sendCreationNotification(requestWithDetails);
+
+          // Send cost approval notification if pallet count is set
+          // This is the additional email with level-based notifications
+          if (palletCount > 0) {
+            await sendCostApprovalNotifications(requestWithDetails);
+          }
         }
 
         return newRequest;

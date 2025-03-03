@@ -1,8 +1,14 @@
 import { sendEmail } from "@/lib/email";
-import { getPlantNotificationEmails } from "@/lib/notification-lists";
+import {
+  getPlantNotificationEmails,
+  getLevelsForCost,
+  getLevelName,
+} from "@/lib/notification-lists";
 import { RequestCreatedEmail } from "@/components/request-created-email";
 import { RequestCompletedEmail } from "@/components/request-completed-email";
 import { createElement } from "react";
+import prisma from "@/lib/prisma";
+import { ApprovalLevel } from "@prisma/client";
 
 type RequestDetails = {
   id: string;
@@ -10,6 +16,7 @@ type RequestDetails = {
   plant?: string | null;
   authorizationNumber: string;
   siteId?: string | null;
+  palletCount: number;
   creator: {
     name: string;
     email: string;
@@ -26,6 +33,14 @@ type RequestDetails = {
     status?: string;
   }>;
 };
+
+// Define local approval level interface for internal use
+interface ApprovalLevelInfo {
+  name: string;
+  minAmount: number;
+  maxAmount: number | null;
+  emails: string[];
+}
 
 // Send notification to plant distribution list when request is created
 export const sendCreationNotification = async (request: RequestDetails) => {
@@ -86,6 +101,113 @@ export const sendCreationNotification = async (request: RequestDetails) => {
   } catch (error) {
     console.error("Error sending creation notification:", error);
     throw error;
+  }
+};
+
+// Send level-based cost approval notifications after pallet count is set
+export const sendCostApprovalNotifications = async (
+  request: RequestDetails
+) => {
+  console.log("Starting sendCostApprovalNotifications");
+
+  try {
+    // Get system settings to check if cost calculation is enabled
+    const settingsData = await prisma.systemSetting.findMany({
+      where: {
+        key: {
+          in: ["enableCostCalculation", "costPerPallet"],
+        },
+      },
+    });
+
+    const enableCostCalculation =
+      settingsData.find((s) => s.key === "enableCostCalculation")?.value ===
+      "true";
+    const costPerPallet = Number(
+      settingsData.find((s) => s.key === "costPerPallet")?.value || "0"
+    );
+
+    // If cost calculation is not enabled or cost per pallet is 0, skip sending notifications
+    if (!enableCostCalculation || costPerPallet <= 0) {
+      console.log(
+        "Cost calculation is disabled or cost per pallet is 0, skipping approval notifications"
+      );
+      return;
+    }
+
+    // Calculate total cost
+    const totalCost = request.palletCount * costPerPallet;
+    console.log(
+      `Total cost for request ${request.id}: $${totalCost.toFixed(2)}`
+    );
+
+    if (!request.plant || !request.siteId) {
+      console.log("Missing plant or siteId, skipping approval notifications");
+      return;
+    }
+
+    // Get the approval levels based on the total cost
+    const requiredLevels = getLevelsForCost(totalCost);
+
+    if (requiredLevels.length === 0) {
+      console.log(
+        "No approval levels match the total cost, skipping notifications"
+      );
+      return;
+    }
+
+    // Get notification emails from the plant notification list for the required levels
+    const notificationEmails = await getPlantNotificationEmails(
+      request.siteId,
+      request.plant,
+      requiredLevels
+    );
+
+    if (notificationEmails.length === 0) {
+      console.log("No notification emails found for the required levels");
+      return;
+    }
+
+    // Get the names of the levels that should receive notifications
+    const levelNames = requiredLevels.map(getLevelName);
+    const levelNamesString = levelNames.join(", ");
+
+    const emailProps = {
+      shipmentNumber: request.shipmentNumber,
+      plant: request.plant,
+      authorizationNumber: request.authorizationNumber,
+      palletCount: request.palletCount,
+      totalCost: totalCost.toFixed(2),
+      approvalLevels: levelNamesString,
+      requestDetails: {
+        trailers: request.trailers.map((rt) => ({
+          trailerNumber: rt.trailer.trailerNumber,
+        })),
+        parts: request.partDetails.map((pd) => ({
+          partNumber: pd.partNumber,
+          quantity: pd.quantity,
+        })),
+      },
+      creator: {
+        name: request.creator.name,
+        email: request.creator.email,
+      },
+    };
+
+    console.log("Sending cost approval notification email");
+    console.log("Email props:", emailProps);
+    console.log("Sending to emails:", notificationEmails);
+
+    await sendEmail({
+      to: notificationEmails,
+      subject: `Cost Approval Required (${levelNamesString}) - ${request.shipmentNumber} - $${totalCost.toFixed(2)}`,
+      react: createElement(RequestCreatedEmail as any, emailProps),
+    });
+
+    console.log("Cost approval notification email sent successfully");
+  } catch (error) {
+    console.error("Error sending cost approval notification:", error);
+    // Don't throw the error, just log it to prevent disrupting the main flow
   }
 };
 

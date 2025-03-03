@@ -19,12 +19,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
+import { ApprovalLevel } from "@prisma/client";
+import { getLevelName } from "@/lib/notification-lists";
 
 type NotificationList = {
   id: string;
   siteId: string;
   plant: string;
   emails: string[];
+  emailLevels?: Record<string, string>;
   enabled: boolean;
 };
 
@@ -104,6 +107,11 @@ export function NotificationListManager() {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   };
 
+  // State for selected level
+  const [selectedLevel, setSelectedLevel] = useState<ApprovalLevel | "NONE">(
+    "NONE"
+  );
+
   // Add email(s) to list
   const handleAddEmail = async () => {
     if (!emailInput || !selectedSite || !selectedPlant) return;
@@ -130,6 +138,17 @@ export function NotificationListManager() {
       const currentEmails = notificationList?.emails || [];
       const newEmails = [...new Set([...currentEmails, ...emailsToAdd])]; // Remove duplicates
 
+      // Update email levels
+      const currentEmailLevels = notificationList?.emailLevels || {};
+      const newEmailLevels = { ...currentEmailLevels };
+
+      // Add level for each new email if a level is selected and not NONE
+      if (selectedLevel && selectedLevel !== "NONE") {
+        emailsToAdd.forEach((email) => {
+          newEmailLevels[email] = selectedLevel;
+        });
+      }
+
       const response = await fetch("/api/notification-lists", {
         method: notificationList ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
@@ -137,6 +156,7 @@ export function NotificationListManager() {
           siteId: selectedSite,
           plant: selectedPlant,
           emails: newEmails,
+          emailLevels: newEmailLevels,
           enabled: notificationList?.enabled ?? false,
         }),
       });
@@ -167,15 +187,24 @@ export function NotificationListManager() {
 
     setIsLoading(true);
     try {
+      // Remove email from list and from emailLevels
+      const newEmails = notificationList.emails.filter(
+        (email) => email !== emailToRemove
+      );
+
+      const newEmailLevels = { ...notificationList.emailLevels };
+      if (newEmailLevels) {
+        delete newEmailLevels[emailToRemove];
+      }
+
       const response = await fetch("/api/notification-lists", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           siteId: selectedSite,
           plant: selectedPlant,
-          emails: notificationList.emails.filter(
-            (email) => email !== emailToRemove
-          ),
+          emails: newEmails,
+          emailLevels: newEmailLevels,
           enabled: notificationList.enabled,
         }),
       });
@@ -192,6 +221,51 @@ export function NotificationListManager() {
       toast({
         title: "Error",
         description: "Failed to update notification list",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update email level
+  const handleUpdateEmailLevel = async (
+    email: string,
+    level: ApprovalLevel
+  ) => {
+    if (!notificationList || !selectedSite || !selectedPlant) return;
+
+    setIsLoading(true);
+    try {
+      const newEmailLevels = {
+        ...(notificationList.emailLevels || {}),
+        [email]: level,
+      };
+
+      const response = await fetch("/api/notification-lists", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          siteId: selectedSite,
+          plant: selectedPlant,
+          emails: notificationList.emails,
+          emailLevels: newEmailLevels,
+          enabled: notificationList.enabled,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to update notification list");
+
+      const updatedList = await response.json();
+      setNotificationList(updatedList);
+      toast({
+        title: "Success",
+        description: "Email level updated",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update email level",
         variant: "destructive",
       });
     } finally {
@@ -253,19 +327,57 @@ export function NotificationListManager() {
 
         {selectedSite && selectedPlant && (
           <div className="space-y-4">
-            <div className="flex space-x-2">
-              <Input
-                type="text"
-                placeholder="Enter email address(es) - comma separated"
-                value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
-              />
-              <Button
-                onClick={handleAddEmail}
-                disabled={isLoading || !emailInput}
-              >
-                Add Email
-              </Button>
+            <div className="space-y-2">
+              <div className="flex space-x-2">
+                <Input
+                  type="text"
+                  placeholder="Enter email address(es) - comma separated"
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  className="flex-grow"
+                />
+                <Select
+                  value={selectedLevel as string}
+                  onValueChange={(value) =>
+                    setSelectedLevel(value as ApprovalLevel)
+                  }
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">No Level</SelectItem>
+                    <SelectItem value="LEVEL1">
+                      {getLevelName("LEVEL1" as ApprovalLevel)}
+                    </SelectItem>
+                    <SelectItem value="LEVEL2">
+                      {getLevelName("LEVEL2" as ApprovalLevel)}
+                    </SelectItem>
+                    <SelectItem value="LEVEL3">
+                      {getLevelName("LEVEL3" as ApprovalLevel)}
+                    </SelectItem>
+                    <SelectItem value="LEVEL4">
+                      {getLevelName("LEVEL4" as ApprovalLevel)}
+                    </SelectItem>
+                    <SelectItem value="LEVEL5">
+                      {getLevelName("LEVEL5" as ApprovalLevel)}
+                    </SelectItem>
+                    <SelectItem value="LEVEL6">
+                      {getLevelName("LEVEL6" as ApprovalLevel)}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={handleAddEmail}
+                  disabled={isLoading || !emailInput}
+                >
+                  Add Email
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Select a level to assign to new email(s). Level determines which
+                cost threshold notifications the email will receive.
+              </p>
             </div>
 
             <div className="space-y-4">
@@ -287,6 +399,7 @@ export function NotificationListManager() {
                               siteId: selectedSite,
                               plant: selectedPlant,
                               emails: notificationList?.emails || [],
+                              emailLevels: notificationList?.emailLevels || {},
                               enabled: checked,
                             }),
                           }
@@ -321,15 +434,67 @@ export function NotificationListManager() {
                       key={email}
                       className="flex items-center justify-between p-2 bg-secondary rounded-md"
                     >
-                      <span>{email}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveEmail(email)}
-                        disabled={isLoading}
-                      >
-                        Remove
-                      </Button>
+                      <div className="flex items-center space-x-2">
+                        <span>{email}</span>
+                        {notificationList.emailLevels &&
+                          notificationList.emailLevels[email] && (
+                            <span className="text-xs px-2 py-1 bg-primary/10 rounded-full">
+                              {getLevelName(
+                                notificationList.emailLevels[
+                                  email
+                                ] as ApprovalLevel
+                              )}
+                            </span>
+                          )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Select
+                          value={
+                            (notificationList.emailLevels &&
+                              notificationList.emailLevels[email]) ||
+                            "NONE"
+                          }
+                          onValueChange={(value) =>
+                            handleUpdateEmailLevel(
+                              email,
+                              value as ApprovalLevel
+                            )
+                          }
+                        >
+                          <SelectTrigger className="h-8 w-[180px]">
+                            <SelectValue placeholder="Select level" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="NONE">No Level</SelectItem>
+                            <SelectItem value="LEVEL1">
+                              {getLevelName("LEVEL1" as ApprovalLevel)}
+                            </SelectItem>
+                            <SelectItem value="LEVEL2">
+                              {getLevelName("LEVEL2" as ApprovalLevel)}
+                            </SelectItem>
+                            <SelectItem value="LEVEL3">
+                              {getLevelName("LEVEL3" as ApprovalLevel)}
+                            </SelectItem>
+                            <SelectItem value="LEVEL4">
+                              {getLevelName("LEVEL4" as ApprovalLevel)}
+                            </SelectItem>
+                            <SelectItem value="LEVEL5">
+                              {getLevelName("LEVEL5" as ApprovalLevel)}
+                            </SelectItem>
+                            <SelectItem value="LEVEL6">
+                              {getLevelName("LEVEL6" as ApprovalLevel)}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveEmail(email)}
+                          disabled={isLoading}
+                        >
+                          Remove
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

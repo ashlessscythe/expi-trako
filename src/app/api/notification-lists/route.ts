@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { siteId, plant: rawPlant, emails, enabled } = body;
+    const { siteId, plant: rawPlant, emails, emailLevels, enabled } = body;
     const plant = rawPlant?.toUpperCase();
 
     if (!siteId || !plant || !emails || enabled === undefined) {
@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
         siteId,
         plant,
         emails,
+        emailLevels,
         enabled,
       },
     });
@@ -93,7 +94,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { siteId, plant: rawPlant, emails, enabled } = body;
+    const { siteId, plant: rawPlant, emails, emailLevels, enabled } = body;
     const plant = rawPlant?.toUpperCase();
 
     if (!siteId || !plant || !emails || enabled === undefined) {
@@ -111,10 +112,12 @@ export async function PUT(request: NextRequest) {
         siteId,
         plant,
         emails,
+        emailLevels,
         enabled,
       },
       update: {
         emails,
+        emailLevels,
         enabled,
       },
     });
