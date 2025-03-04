@@ -163,7 +163,12 @@ function generatePartWithQuantity() {
 const usedTrailerNumbers = new Set();
 
 // Helper function to generate unique authorization number using transactions
-async function generateUniqueAuthNumber(tx, userId, length = 10, maxAttempts = 10) {
+async function generateUniqueAuthNumber(
+  tx,
+  userId,
+  length = 10,
+  maxAttempts = 10
+) {
   let attempts = 0;
 
   while (attempts < maxAttempts) {
@@ -410,6 +415,164 @@ async function associateWithDefaultSite(defaultSite) {
   return { userUpdateCount, requestUpdateCount };
 }
 
+// Define approval levels for email notifications
+const approvalLevels = [
+  "LEVEL1", // PC Manager (0-$250)
+  "LEVEL2", // Plant Controller ($250-$500)
+  "LEVEL3", // Plant Manager ($500-$1,000)
+  "LEVEL4", // Regional Controller ($1,000-$2,000)
+  "LEVEL5", // Regional Operations ($2,000-$5,000)
+  "LEVEL6", // Operations Director (>$5,000)
+];
+
+// Helper function to generate random emails with consistent domain
+function generateRandomEmails(count = 3, useFaker = false) {
+  const emails = [];
+  for (let i = 0; i < count; i++) {
+    // Use consistent example.com domain instead of random domains
+    if (useFaker) {
+      // Use faker for the username part but with consistent domain
+      const username = faker.internet
+        .userName()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, ".");
+      emails.push(`${username}@example.com`);
+    } else {
+      // Simple numbered format
+      emails.push(`user${faker.number.int(9999)}@example.com`);
+    }
+  }
+  return emails;
+}
+
+// Helper function to generate email levels mapping
+function generateEmailLevels(emails) {
+  const emailLevels = {};
+  for (const email of emails) {
+    // Assign a random approval level to each email
+    const randomLevel =
+      approvalLevels[Math.floor(Math.random() * approvalLevels.length)];
+    emailLevels[email] = randomLevel;
+  }
+  return emailLevels;
+}
+
+// Helper function to populate email notification levels
+async function populateEmailNotificationLevels(defaultSite) {
+  console.log("Checking plant notification lists...");
+
+  // Get all notification lists
+  const notificationLists = await prisma.plantNotificationList.findMany();
+
+  // Default plant codes to use
+  const plantCodes = ["FS22", "PL45", "WH23", "DK89"];
+
+  // If no notification lists exist, create default ones
+  if (notificationLists.length === 0) {
+    console.log("No plant notification lists found. Creating defaults...");
+
+    // Create a notification list for each plant code
+    for (const plant of plantCodes) {
+      const emails = generateRandomEmails(3, argv.useFaker);
+      const emailLevels = generateEmailLevels(emails);
+
+      await prisma.plantNotificationList.create({
+        data: {
+          siteId: defaultSite.id,
+          plant,
+          emails,
+          emailLevels,
+          enabled: true,
+        },
+      });
+    }
+
+    console.log(
+      `Created ${plantCodes.length} default plant notification lists.`
+    );
+    return;
+  }
+
+  // Update existing lists that don't have email levels
+  let updatedCount = 0;
+  for (const list of notificationLists) {
+    // Skip if emailLevels is already populated
+    if (list.emailLevels !== null) {
+      continue;
+    }
+
+    // Create a map of email to random level
+    const emailLevels = {};
+
+    if (list.emails && list.emails.length > 0) {
+      for (const email of list.emails) {
+        // Assign a random approval level to each email
+        const randomLevel =
+          approvalLevels[Math.floor(Math.random() * approvalLevels.length)];
+        emailLevels[email] = randomLevel;
+      }
+
+      // Update the notification list with the email levels
+      await prisma.plantNotificationList.update({
+        where: { id: list.id },
+        data: { emailLevels },
+      });
+
+      updatedCount++;
+    }
+  }
+
+  if (updatedCount > 0) {
+    console.log(
+      `Updated ${updatedCount} plant notification lists with email levels.`
+    );
+  }
+
+  // For idempotent runs, add 1-2 more notification lists if they don't already exist
+  // First, get the existing plant codes
+  const existingPlants = new Set(notificationLists.map((list) => list.plant));
+
+  // Generate some additional plant codes that don't exist yet
+  const additionalPlants = [];
+  const potentialPlants = ["MF33", "BT67", "CP12", "RD55"];
+
+  for (const plant of potentialPlants) {
+    if (!existingPlants.has(plant)) {
+      additionalPlants.push(plant);
+      if (additionalPlants.length >= 2) break; // Limit to 2 additional plants
+    }
+  }
+
+  // Create 1-2 additional notification lists
+  if (additionalPlants.length > 0) {
+    const addCount = faker.number.int({
+      min: 1,
+      max: Math.min(2, additionalPlants.length),
+    });
+
+    for (let i = 0; i < addCount; i++) {
+      const plant = additionalPlants[i];
+      const emails = generateRandomEmails(
+        faker.number.int({ min: 2, max: 5 }),
+        argv.useFaker
+      );
+      const emailLevels = generateEmailLevels(emails);
+
+      await prisma.plantNotificationList.create({
+        data: {
+          siteId: defaultSite.id,
+          plant,
+          emails,
+          emailLevels,
+          enabled: faker.datatype.boolean(),
+        },
+      });
+    }
+
+    console.log(`Added ${addCount} additional plant notification lists.`);
+  }
+}
+
 async function main() {
   console.log("Starting seed...");
 
@@ -525,8 +688,9 @@ async function main() {
       // Create request in a transaction
       const request = await prisma.$transaction(async (tx) => {
         // Get a random user ID for the auth number generation
-        const userId = createdUsers[Math.floor(Math.random() * createdUsers.length)].id;
-        
+        const userId =
+          createdUsers[Math.floor(Math.random() * createdUsers.length)].id;
+
         // Generate unique auth number inside transaction
         const authorizationNumber = await generateUniqueAuthNumber(tx, userId);
 
@@ -541,7 +705,9 @@ async function main() {
             plant: faker.helpers.arrayElement(["FS22", "PL45", "WH23", "DK89"]),
             palletCount: totalPalletCount,
             status:
-              requestStatuses[Math.floor(Math.random() * requestStatuses.length)],
+              requestStatuses[
+                Math.floor(Math.random() * requestStatuses.length)
+              ],
             routeInfo: faker.location.streetAddress(),
             additionalNotes: selectedNotes.join(" | "),
             notes: selectedNotes,
@@ -611,6 +777,9 @@ async function main() {
   } else {
     console.log("Skipping request creation (--add-req flag not included)");
   }
+
+  // Populate email notification levels for any existing notification lists
+  await populateEmailNotificationLevels(defaultSite);
 
   console.log("Seed completed successfully");
 

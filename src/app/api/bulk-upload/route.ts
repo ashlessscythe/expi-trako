@@ -315,36 +315,6 @@ async function processRows(
           );
         }
 
-        // Get the full request details for notification
-        const requestWithDetails = await tx.mustGoRequest.findUnique({
-          where: { id: newRequest.id },
-          include: {
-            creator: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
-            trailers: {
-              include: {
-                trailer: true,
-              },
-            },
-            partDetails: true,
-          },
-        });
-
-        if (requestWithDetails) {
-          // Send initial creation notification
-          await sendCreationNotification(requestWithDetails);
-
-          // Send cost approval notification if pallet count is set
-          // This is the additional email with level-based notifications
-          if (palletCount > 0) {
-            await sendCostApprovalNotifications(requestWithDetails);
-          }
-        }
-
         return newRequest;
       });
 
@@ -354,6 +324,37 @@ async function processRows(
         shipmentNumber: row.shipmentNumber,
         defaultPalletCount,
       });
+
+      // Get the full request details for notification after transaction completes
+      const requestWithDetails = await prisma.mustGoRequest.findUnique({
+        where: { id: request.id },
+        include: {
+          creator: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+          trailers: {
+            include: {
+              trailer: true,
+            },
+          },
+          partDetails: true,
+        },
+      });
+
+      if (requestWithDetails) {
+        try {
+          // Only send the initial creation notification
+          await sendCreationNotification(requestWithDetails);
+
+          // Cost approval notifications will be sent after pallet count is updated
+        } catch (emailError) {
+          console.error("Error sending creation notification:", emailError);
+          // Don't fail the request if email sending fails
+        }
+      }
 
       result.successfulRows++;
     } catch (error) {

@@ -79,8 +79,11 @@ export function RequestInfoCard({
             {settings.enableCostCalculation && settings.costPerPallet > 0 && (
               <>
                 <div className="text-sm text-muted-foreground mt-1">
-                  Cost: $
-                  {(request.palletCount * settings.costPerPallet).toFixed(2)}
+                  Cost:{" "}
+                  {new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  }).format(request.palletCount * settings.costPerPallet)}
                 </div>
                 <div className="text-xs italic text-amber-600 mt-1">
                   * This cost is an estimate and may vary based on actual

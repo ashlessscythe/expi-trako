@@ -8,7 +8,10 @@ import { authOptions } from "@/lib/auth-config";
 import { generateUniqueAuthNumber } from "@/hooks/useAuthNumber";
 import { isCustomerService, isAdmin, isWarehouse } from "@/lib/auth";
 import type { AuthUser, SessionUser, FormData } from "@/lib/types";
-import { sendCreationNotification } from "@/lib/request-emails";
+import {
+  sendCreationNotification,
+  sendCostApprovalNotifications,
+} from "@/lib/request-emails";
 
 // GET /api/requests - List all requests with optional filters
 export async function GET(req: Request) {
@@ -346,13 +349,24 @@ export async function POST(req: Request) {
         },
       });
 
-      // Send notification to plant-specific distribution list
-      if (createdRequest) {
-        await sendCreationNotification(createdRequest);
-      }
-
       return createdRequest;
     });
+
+    // Send notifications after transaction completes
+    if (result) {
+      try {
+        // Send initial creation notification
+        await sendCreationNotification(result);
+
+        // Send cost approval notification if pallet count is set
+        if (result.palletCount > 0) {
+          await sendCostApprovalNotifications(result);
+        }
+      } catch (emailError) {
+        console.error("Error sending email notifications:", emailError);
+        // Don't fail the request if email sending fails
+      }
+    }
 
     // Add cache control headers to ensure clients revalidate
     const response = NextResponse.json(result, { status: 201 });
