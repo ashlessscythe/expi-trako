@@ -467,6 +467,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // this is where the magic happens
     const result = await processRows(
       rows,
       dbUser.id,

@@ -200,7 +200,7 @@ export const sendCostApprovalNotifications = async (
 
     await sendEmail({
       to: notificationEmails,
-      subject: `Notification of Approx Request Cost: (${levelNamesString}) - ${request.shipmentNumber} - $${totalCost.toFixed(2)}`,
+      subject: `Notification of estimated request cost: (${levelNamesString}) - ${request.shipmentNumber} - $${totalCost.toFixed(2)}`,
       react: createElement(RequestCreatedEmail as any, emailProps),
     });
 
