@@ -432,13 +432,13 @@ export function NotificationListManager() {
                   {notificationList.emails.map((email) => (
                     <div
                       key={email}
-                      className="flex items-center justify-between p-2 bg-secondary rounded-md"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-2 bg-secondary rounded-md gap-2"
                     >
-                      <div className="flex items-center space-x-2">
-                        <span>{email}</span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="break-all">{email}</span>
                         {notificationList.emailLevels &&
                           notificationList.emailLevels[email] && (
-                            <span className="text-xs px-2 py-1 bg-primary/10 rounded-full">
+                            <span className="text-xs px-2 py-1 bg-primary/10 rounded-full whitespace-nowrap">
                               {getLevelName(
                                 notificationList.emailLevels[
                                   email
@@ -447,7 +447,7 @@ export function NotificationListManager() {
                             </span>
                           )}
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Select
                           value={
                             (notificationList.emailLevels &&
@@ -461,7 +461,7 @@ export function NotificationListManager() {
                             )
                           }
                         >
-                          <SelectTrigger className="h-8 w-[180px]">
+                          <SelectTrigger className="h-8 w-full sm:w-[180px]">
                             <SelectValue placeholder="Select level" />
                           </SelectTrigger>
                           <SelectContent>
@@ -491,6 +491,7 @@ export function NotificationListManager() {
                           size="sm"
                           onClick={() => handleRemoveEmail(email)}
                           disabled={isLoading}
+                          className="w-full sm:w-auto"
                         >
                           Remove
                         </Button>
