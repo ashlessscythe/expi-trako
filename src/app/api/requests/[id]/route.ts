@@ -22,6 +22,7 @@ interface Part {
 
 interface TrailerWithParts {
   trailerNumber: string;
+  plant?: string;
   parts: Part[];
 }
 
@@ -114,7 +115,10 @@ export async function GET(
       mustGoRequest.siteId !== authUser.site.id &&
       mustGoRequest.siteId !== null
     ) {
-      return NextResponse.json({ error: "Not authorized to view this request" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Not authorized to view this request" },
+        { status: 403 }
+      );
     }
 
     // Add canEdit flag based on user permissions
@@ -149,6 +153,7 @@ export async function PATCH(
 
     const user = session.user as SessionUser;
     const body = await req.json();
+    console.log("Request body:", JSON.stringify(body, null, 2));
 
     // Check if this is a status update
     if (body.status || body.note) {
@@ -612,12 +617,17 @@ export async function PATCH(
           (t) => t.trailer.trailerNumber === trailerData.trailerNumber
         );
 
+        console.log(
+          "Creating RequestTrailer with trailerData:",
+          JSON.stringify(trailerData, null, 2)
+        );
         await tx.requestTrailer.create({
           data: {
             request: { connect: { id: request.id } },
             trailer: { connect: { id: trailer.id } },
             status: existingTrailer?.status || "PENDING",
             isTransload: existingTrailer?.isTransload || false,
+            plant: trailerData.plant || "",
           },
         });
 

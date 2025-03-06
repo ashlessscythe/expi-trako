@@ -294,12 +294,13 @@ export async function POST(req: Request) {
           update: {},
         });
 
-        // Link trailer to request with isTransload flag
+        // Link trailer to request with isTransload flag and plant
         await tx.requestTrailer.create({
           data: {
             requestId: request.id,
             trailerId: trailer.id,
             isTransload: trailerData.isTransload || false,
+            plant: trailerData.plant || request.plant, // Use trailer plant or fallback to request plant
           },
         });
 

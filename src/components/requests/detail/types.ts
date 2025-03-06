@@ -16,6 +16,7 @@ export interface PartsByTrailer {
   [trailerNumber: string]: {
     trailerId: string;
     isTransload: boolean;
+    plant?: string;
     parts: FormPart[];
   };
 }

@@ -19,6 +19,7 @@ import {
 interface TrailerInput {
   trailerNumber: string;
   isTransload: boolean;
+  plant: string;
   partsInput: string;
   parts: Array<{
     partNumber: string;
@@ -42,6 +43,7 @@ export default function NewRequestForm({
     {
       trailerNumber: "",
       isTransload: false,
+      plant: "",
       partsInput: "",
       parts: [],
     },
@@ -145,6 +147,7 @@ export default function NewRequestForm({
         return {
           trailerNumber: trailer.trailerNumber,
           isTransload: trailer.isTransload,
+          plant: trailer.plant,
           parts,
         };
       });
@@ -226,6 +229,7 @@ export default function NewRequestForm({
       {
         trailerNumber: "",
         isTransload: false,
+        plant: "",
         partsInput: "",
         parts: [],
       },
@@ -327,6 +331,20 @@ export default function NewRequestForm({
                 }
                 required
                 placeholder="Enter trailer number"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`plant-${index}`}>Plant (4 characters)</Label>
+              <Input
+                id={`plant-${index}`}
+                value={trailer.plant}
+                onChange={(e) =>
+                  handleTrailerChange(index, "plant", e.target.value)
+                }
+                maxLength={4}
+                pattern="[a-zA-Z0-9]{4}"
+                title="Plant must be exactly 4 alphanumeric characters"
+                placeholder="Enter 4-character plant code"
               />
             </div>
             <div className="flex items-center space-x-2">

@@ -51,12 +51,6 @@ export function RequestInfoCard({
           <div className="text-sm text-muted-foreground">Shipment Number</div>
           <div className="font-medium">{request.shipmentNumber}</div>
         </div>
-        {request.plant && (
-          <div>
-            <div className="text-sm text-muted-foreground">Plant</div>
-            <div className="font-medium">{request.plant}</div>
-          </div>
-        )}
         {request.authorizationNumber && (
           <div>
             <div className="text-sm text-muted-foreground">

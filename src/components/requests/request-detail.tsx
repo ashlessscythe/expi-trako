@@ -70,6 +70,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
             acc[trailerNumber] = {
               trailerId: part.trailer?.id || "",
               isTransload: requestTrailer?.isTransload || false,
+              plant: requestTrailer?.plant || "",
               parts: [],
             };
           }
@@ -91,10 +92,16 @@ export default function RequestDetail({ id }: RequestDetailProps) {
         routeInfo: data.routeInfo || "",
         additionalNotes: data.additionalNotes || "",
         trailers: Object.entries(partsByTrailer).map(
-          ([trailerNumber, { parts }]) => ({
-            trailerNumber,
-            parts,
-          })
+          ([trailerNumber, { parts, plant }]) => {
+            const requestTrailer = data.trailers.find(
+              (t) => t.trailer.trailerNumber === trailerNumber
+            );
+            return {
+              trailerNumber,
+              parts,
+              plant: requestTrailer?.plant || "",
+            };
+          }
         ),
       });
     } catch (error: unknown) {
@@ -243,6 +250,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
         acc[trailerNumber] = {
           trailerId: part.trailer?.id || "",
           isTransload: requestTrailer?.isTransload || false,
+          plant: requestTrailer?.plant || "",
           parts: [],
         };
       }

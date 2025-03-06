@@ -106,6 +106,7 @@ model RequestTrailer {
   status          ItemStatus    @default(PENDING)
   createdAt       DateTime      @default(now())
   isTransload     Boolean       @default(false)
+  plant           String?       // Plant code for this specific trailer
 
   @@unique([requestId, trailerId])
   @@index([requestId])

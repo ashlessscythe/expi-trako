@@ -52,6 +52,7 @@ export interface RequestTrailer {
   trailer: Trailer;
   createdAt: string;
   isTransload: boolean;
+  plant?: string;
 }
 
 export interface RequestCreator {
@@ -99,6 +100,7 @@ export interface FormTrailer {
   trailerNumber: string;
   parts: FormPart[];
   isTransload?: boolean;
+  plant?: string;
 }
 
 export interface FormData {

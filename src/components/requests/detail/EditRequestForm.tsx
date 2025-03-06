@@ -68,6 +68,7 @@ export function EditRequestForm({
         ...editForm.trailers,
         {
           trailerNumber: "",
+          plant: "",
           parts: [{ partNumber: "", quantity: 0 }],
         },
       ],
@@ -82,6 +83,16 @@ export function EditRequestForm({
   const handleTrailerNumberChange = (index: number, value: string) => {
     const newTrailers = [...editForm.trailers];
     newTrailers[index] = { ...newTrailers[index], trailerNumber: value };
+    setEditForm({ ...editForm, trailers: newTrailers });
+  };
+
+  const handleTrailerChange = (
+    index: number,
+    field: keyof FormTrailer,
+    value: string | boolean
+  ) => {
+    const newTrailers = [...editForm.trailers];
+    newTrailers[index] = { ...newTrailers[index], [field]: value };
     setEditForm({ ...editForm, trailers: newTrailers });
   };
 
@@ -252,6 +263,23 @@ export function EditRequestForm({
                         }
                         required
                         placeholder="Enter trailer number"
+                      />
+                    </div>
+                    <div className="space-y-2 mt-2">
+                      <Label>Plant (4 characters)</Label>
+                      <Input
+                        value={trailer.plant || ""}
+                        onChange={(e) =>
+                          handleTrailerChange(
+                            trailerIndex,
+                            "plant",
+                            e.target.value
+                          )
+                        }
+                        maxLength={4}
+                        pattern="[a-zA-Z0-9]{4}"
+                        title="Plant must be exactly 4 alphanumeric characters"
+                        placeholder="Enter 4-character plant code"
                       />
                     </div>
                   </CardHeader>
