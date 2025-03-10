@@ -1,20 +1,42 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { Menu, Moon, Sun, X, Github } from "lucide-react";
+import {
+  Menu,
+  X,
+  Github,
+  Flame,
+  Droplet,
+  Wind,
+  Mountain,
+  Monitor,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { APP_NAME } from "@/lib/config";
 import { useAuth } from "@/lib/auth-context";
 import { FeedbackModal } from "./feedback-modal";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function Header() {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const { user, signOut } = useAuth();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+
+  // Ensure theme selection works properly with SSR
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navLinks = user
     ? [
@@ -119,14 +141,58 @@ export function Header() {
                 <Menu className="h-4 w-4" />
               )}
             </button>
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-input bg-background text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+            <Select
+              value={mounted ? theme : undefined}
+              onValueChange={(value) => setTheme(value)}
             >
-              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </button>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Theme" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">
+                  <div className="flex items-center gap-2">
+                    <Monitor className="h-4 w-4" />
+                    <span>Corporate</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="dark">
+                  <div className="flex items-center gap-2">
+                    <Monitor className="h-4 w-4" />
+                    <span>Dark</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="fire">
+                  <div className="flex items-center gap-2">
+                    <Flame className="h-4 w-4 text-orange-500" />
+                    <span>Fire</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="water">
+                  <div className="flex items-center gap-2">
+                    <Droplet className="h-4 w-4 text-blue-500" />
+                    <span>Water</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="earth">
+                  <div className="flex items-center gap-2">
+                    <Mountain className="h-4 w-4 text-green-500" />
+                    <span>Earth</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="air">
+                  <div className="flex items-center gap-2">
+                    <Wind className="h-4 w-4 text-sky-500" />
+                    <span>Air</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="sleek">
+                  <div className="flex items-center gap-2">
+                    <Monitor className="h-4 w-4 text-purple-500" />
+                    <span>Sleek</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
             {!user && (
               <Link
                 href="https://github.com/ashlessscythe/expi-trako"
