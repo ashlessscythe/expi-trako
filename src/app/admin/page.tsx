@@ -97,6 +97,12 @@ export default async function AdminDashboard() {
             Manage Users
           </a>
           <a
+            href="/admin/feedback"
+            className="block p-4 bg-secondary hover:bg-secondary/90 text-secondary-foreground rounded-lg text-center transition-colors"
+          >
+            Manage User Feedback
+          </a>
+          <a
             href="/reports"
             className="block p-4 bg-secondary hover:bg-secondary/90 text-secondary-foreground rounded-lg text-center transition-colors"
           >

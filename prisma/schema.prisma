@@ -44,6 +44,8 @@ model User {
   // Keep old relation for backwards compatibility
   siteId               String?         
   site                 Site?           @relation(fields: [siteId], references: [id])
+  // User feedback
+  feedback             Feedback[]
 
   @@index([siteId])
 }
@@ -164,6 +166,18 @@ model PlantNotificationList {
   @@index([siteId])
 }
 
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  status    FeedbackStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
 enum ItemStatus {
   PENDING      // The request is new and awaiting processing
   IN_PROGRESS  // The part is actively being expedited
@@ -203,4 +217,11 @@ enum ApprovalLevel {
   LEVEL4 // Regional Controller ($1,000-$2,000)
   LEVEL5 // Regional Operations ($2,000-$5,000)
   LEVEL6 // Operations Director (>$5,000)
+}
+
+enum FeedbackStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+  DISMISSED
 }
