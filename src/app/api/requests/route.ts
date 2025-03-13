@@ -200,15 +200,15 @@ export async function POST(req: Request) {
     } = body;
 
     // Validate required fields
-    if (!shipmentNumber || !trailers?.length || !palletCount) {
+    if (!shipmentNumber || !plant || !trailers?.length || !palletCount) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    // Validate plant format if provided
-    if (plant && !/^[a-zA-Z0-9]{4}$/.test(plant)) {
+    // Validate plant format
+    if (!/^[a-zA-Z0-9]{4}$/.test(plant)) {
       return NextResponse.json(
         { error: "Plant must be exactly 4 alphanumeric characters" },
         { status: 400 }

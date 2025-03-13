@@ -124,8 +124,17 @@ export default function NewRequestForm({
     setIsLoading(true);
 
     try {
-      // Validate plant number if provided
-      if (formData.plant && !/^[a-zA-Z0-9]{4}$/.test(formData.plant)) {
+      // Check for required fields
+      if (!formData.shipmentNumber) {
+        throw new Error("Shipment number is required");
+      }
+
+      if (!formData.plant) {
+        throw new Error("Plant is required");
+      }
+
+      // Validate plant number format
+      if (!/^[a-zA-Z0-9]{4}$/.test(formData.plant)) {
         throw new Error("Plant must be exactly 4 alphanumeric characters");
       }
 
@@ -275,11 +284,12 @@ export default function NewRequestForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="plant">Plant (4 characters)</Label>
+        <Label htmlFor="plant">Plant (4 characters) *</Label>
         <Input
           id="plant"
           name="plant"
-          value={formData.plant || ""}
+          required
+          value={formData.plant}
           onChange={handleChange}
           placeholder="Enter 4-character plant code"
           pattern="[a-zA-Z0-9]{4}"

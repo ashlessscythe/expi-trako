@@ -87,7 +87,7 @@ function groupDataByCriteria(
 
   rawData.forEach((row) => {
     const shipmentNumber = row["SHIPMENT"]?.toString() || "";
-    const plant = row["PLANT"]?.toString() || "";
+    const plant = row["PLANT"]?.toString() || "N/A";
     const trailerNumber = row["1ST truck #"]?.toString() || "";
     const routeInfo = row["INSTRUCTIONS"]?.toString() || "";
     const partNumber = row["DELPHI P/N"]?.toString() || "";
