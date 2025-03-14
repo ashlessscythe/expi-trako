@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Placeholder</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      h1 {
+        color: #2563eb;
+        border-bottom: 2px solid #e5e7eb;
+        padding-bottom: 10px;
+      }
+      .video-container {
+        margin: 30px 0;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+      video {
+        width: 100%;
+        display: block;
+      }
+      .file-list {
+        background-color: #f9fafb;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+      code {
+        background-color: #f1f5f9;
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-family: "Courier New", Courier, monospace;
+      }
+      .note {
+        background-color: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        padding: 10px 15px;
+        margin: 20px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Video Placeholders for Landing Page</h1>
+
+    <p>
+      This page demonstrates the video placeholders needed for the landing page.
+      Replace these placeholders with actual screen recordings of your
+      application.
+    </p>
+
+    <div class="note">
+      <strong>Note:</strong> For each video, you should create both WebM and MP4
+      versions for maximum browser compatibility.
+    </div>
+
+    <h2>Required Videos</h2>
+
+    <div class="file-list">
+      <p>
+        The following video files need to be created and placed in the
+        <code>/public/videos/</code> directory:
+      </p>
+      <ul>
+        <li>
+          <code>dashboard-demo.webm</code> and <code>.mp4</code> - Main hero
+          section
+        </li>
+        <li>
+          <code>real-time-tracking.webm</code> and <code>.mp4</code> - Feature
+          section
+        </li>
+        <li>
+          <code>analytics-demo.webm</code> and <code>.mp4</code> - Feature
+          section
+        </li>
+        <li>
+          <code>request-flow.webm</code> and <code>.mp4</code> - Showcase
+          section
+        </li>
+        <li>
+          <code>dashboard-overview.webm</code> and <code>.mp4</code> - Showcase
+          section
+        </li>
+      </ul>
+    </div>
+
+    <h2>Example Video</h2>
+
+    <p>
+      Below is an example of how your videos will appear on the landing page:
+    </p>
+
+    <div class="video-container">
+      <!-- This is just a placeholder. Replace with your actual video -->
+      <video controls poster="/dashboard.png" loop muted>
+        <source
+          src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm"
+          type="video/webm"
+        />
+        <source
+          src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
+          type="video/mp4"
+        />
+        Your browser does not support the video tag.
+      </video>
+    </div>
+
+    <h2>Next Steps</h2>
+
+    <ol>
+      <li>Create screen recordings of your application showing key features</li>
+      <li>
+        Convert recordings to both WebM and MP4 formats (see the video
+        guidelines document)
+      </li>
+      <li>Name files according to the list above</li>
+      <li>Place all files in the <code>/public/videos/</code> directory</li>
+      <li>Test the landing page to ensure videos play correctly</li>
+    </ol>
+
+    <p>
+      For detailed instructions on creating and converting videos, refer to the
+      <a href="/docs/video-guidelines.md">Video Guidelines</a> document.
+    </p>
+  </body>
+</html>

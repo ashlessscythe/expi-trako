@@ -6,6 +6,8 @@ import { Footer } from "@/components/footer";
 import { Clock, BarChart2, Users, Truck } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { APP_NAME } from "@/lib/config";
+import { VideoPlayer } from "@/components/ui/video-player";
+import Image from "next/image";
 
 const features = [
   {
@@ -43,7 +45,7 @@ export default function Home() {
       <main>
         {/* Hero Section */}
         <div className="bg-background">
-          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-48">
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
             <div className="text-center">
               <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
                 Must-Go Management{" "}
@@ -55,6 +57,22 @@ export default function Home() {
                 Streamline your expedite request process with {APP_NAME}. Track,
                 manage, and process must-go shipments efficiently in one place.
               </p>
+
+              {/* Hero Video/Animation */}
+              <div className="mt-10 mx-auto max-w-4xl">
+                <VideoPlayer
+                  gifSrc="/videos/dashbaord.gif"
+                  posterSrc="/dashboard.png"
+                  className="shadow-xl border border-border/40"
+                  caption="See the platform in action"
+                  clickToPlay={true}
+                  rounded="xl"
+                  overlay={true}
+                  objectFit="contain"
+                  autoSize={true}
+                />
+              </div>
+
               {!loading && (
                 <div className="mx-auto mt-10 max-w-sm sm:flex sm:max-w-none sm:justify-center">
                   {user ? (
@@ -101,7 +119,7 @@ export default function Home() {
             </div>
             <div className="mx-auto mt-16 max-w-7xl sm:mt-20 lg:mt-24">
               <div className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:max-w-none lg:grid-cols-4">
-                {features.map(({ name, description, icon: Icon }) => (
+                {features.map(({ name, description, icon: Icon }, index) => (
                   <div
                     key={name}
                     className="relative flex flex-col gap-6 border rounded-lg p-6 transform transition-transform duration-300 hover:scale-105"
@@ -120,8 +138,47 @@ export default function Home() {
                         {description}
                       </p>
                     </div>
+                    {/* Feature cards no longer display individual videos */}
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Showcase Section */}
+        <div className="bg-background py-16">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                See It In Action
+              </h2>
+              <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
+                Watch how {APP_NAME} transforms your workflow
+              </p>
+            </div>
+            <div className="mx-auto mt-16 max-w-5xl">
+              <div className="grid gap-8 md:grid-cols-2">
+                <VideoPlayer
+                  gifSrc="/videos/real-time-tracking.gif"
+                  posterSrc="/list.png"
+                  className="shadow-lg border border-border/40"
+                  caption="Creating and tracking requests"
+                  rounded="xl"
+                  overlay={true}
+                  objectFit="contain"
+                  autoSize={true}
+                />
+                <VideoPlayer
+                  gifSrc="/videos/analytics-dashboard.gif"
+                  posterSrc="/dashboard.png"
+                  className="shadow-lg border border-border/40"
+                  caption="Dashboard and analytics"
+                  rounded="xl"
+                  overlay={true}
+                  objectFit="contain"
+                  autoSize={true}
+                />
               </div>
             </div>
           </div>
