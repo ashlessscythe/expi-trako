@@ -5,11 +5,12 @@ import {
   Menu,
   X,
   Github,
-  Flame,
-  Droplet,
-  Wind,
-  Mountain,
   Monitor,
+  Palette,
+  Leaf,
+  Heart,
+  Droplet,
+  Rocket,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -161,34 +162,34 @@ export function Header() {
                     <span>Dark</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="fire">
+                <SelectItem value="catppuccin">
                   <div className="flex items-center gap-2">
-                    <Flame className="h-4 w-4 text-orange-500" />
-                    <span>Fire</span>
+                    <Palette className="h-4 w-4 text-purple-500" />
+                    <span>Catppuccin</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="water">
+                <SelectItem value="mint">
                   <div className="flex items-center gap-2">
-                    <Droplet className="h-4 w-4 text-blue-500" />
-                    <span>Water</span>
+                    <Leaf className="h-4 w-4 text-green-500" />
+                    <span>Mint</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="earth">
+                <SelectItem value="crimson">
                   <div className="flex items-center gap-2">
-                    <Mountain className="h-4 w-4 text-green-500" />
-                    <span>Earth</span>
+                    <Heart className="h-4 w-4 text-red-500" />
+                    <span>Crimson</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="air">
+                <SelectItem value="seafoam">
                   <div className="flex items-center gap-2">
-                    <Wind className="h-4 w-4 text-sky-500" />
-                    <span>Air</span>
+                    <Droplet className="h-4 w-4 text-teal-500" />
+                    <span>Seafoam</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="sleek">
+                <SelectItem value="rocket">
                   <div className="flex items-center gap-2">
-                    <Monitor className="h-4 w-4 text-purple-500" />
-                    <span>Sleek</span>
+                    <Rocket className="h-4 w-4 text-blue-500" />
+                    <span>Rocket</span>
                   </div>
                 </SelectItem>
               </SelectContent>

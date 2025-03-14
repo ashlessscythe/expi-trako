@@ -58,20 +58,22 @@ export default function Home() {
                 manage, and process must-go shipments efficiently in one place.
               </p>
 
-              {/* Hero Video/Animation */}
-              <div className="mt-10 mx-auto max-w-4xl">
-                <VideoPlayer
-                  gifSrc="/videos/dashbaord.gif"
-                  posterSrc="/dashboard.png"
-                  className="shadow-xl border border-border/40"
-                  caption="See the platform in action"
-                  clickToPlay={true}
-                  rounded="xl"
-                  overlay={true}
-                  objectFit="contain"
-                  autoSize={true}
-                />
-              </div>
+              {/* Hero Video/Animation - only shown to non-logged in users */}
+              {!user && (
+                <div className="mt-10 mx-auto max-w-4xl">
+                  <VideoPlayer
+                    gifSrc="/videos/dashbaord.gif"
+                    posterSrc="/dashboard.png"
+                    className="shadow-xl border border-border/40"
+                    caption="See the platform in action"
+                    clickToPlay={true}
+                    rounded="xl"
+                    overlay={true}
+                    objectFit="contain"
+                    autoSize={true}
+                  />
+                </div>
+              )}
 
               {!loading && (
                 <div className="mx-auto mt-10 max-w-sm sm:flex sm:max-w-none sm:justify-center">
@@ -146,43 +148,45 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Showcase Section */}
-        <div className="bg-background py-16">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                See It In Action
-              </h2>
-              <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
-                Watch how {APP_NAME} transforms your workflow
-              </p>
-            </div>
-            <div className="mx-auto mt-16 max-w-5xl">
-              <div className="grid gap-8 md:grid-cols-2">
-                <VideoPlayer
-                  gifSrc="/videos/real-time-tracking.gif"
-                  posterSrc="/list.png"
-                  className="shadow-lg border border-border/40"
-                  caption="Creating and tracking requests"
-                  rounded="xl"
-                  overlay={true}
-                  objectFit="contain"
-                  autoSize={true}
-                />
-                <VideoPlayer
-                  gifSrc="/videos/analytics-dashboard.gif"
-                  posterSrc="/dashboard.png"
-                  className="shadow-lg border border-border/40"
-                  caption="Dashboard and analytics"
-                  rounded="xl"
-                  overlay={true}
-                  objectFit="contain"
-                  autoSize={true}
-                />
+        {/* Showcase Section - only shown to non-logged in users */}
+        {!user && (
+          <div className="bg-background py-16">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="mx-auto max-w-2xl text-center">
+                <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+                  See It In Action
+                </h2>
+                <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-muted-foreground">
+                  Watch how {APP_NAME} transforms your workflow
+                </p>
+              </div>
+              <div className="mx-auto mt-16 max-w-5xl">
+                <div className="grid gap-8 md:grid-cols-2">
+                  <VideoPlayer
+                    gifSrc="/videos/real-time-tracking.gif"
+                    posterSrc="/list.png"
+                    className="shadow-lg border border-border/40"
+                    caption="Creating and tracking requests"
+                    rounded="xl"
+                    overlay={true}
+                    objectFit="contain"
+                    autoSize={true}
+                  />
+                  <VideoPlayer
+                    gifSrc="/videos/analytics-dashboard.gif"
+                    posterSrc="/dashboard.png"
+                    className="shadow-lg border border-border/40"
+                    caption="Dashboard and analytics"
+                    rounded="xl"
+                    overlay={true}
+                    objectFit="contain"
+                    autoSize={true}
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Help & Resources Section */}
         <div className="bg-background py-16 sm:py-24">
