@@ -10,7 +10,6 @@ import { redirect } from "next/navigation";
 
 export default function RequestsPage() {
   const { data: session, status } = useSession();
-  const [requests, setRequests] = useState([]);
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
@@ -26,30 +25,12 @@ export default function RequestsPage() {
       redirect("/api/auth/signin");
       return;
     }
+  }, [session]);
 
-    // Fetch requests with showAll parameter
-    const fetchRequests = async () => {
-      const params = new URLSearchParams();
-      if (showAll) {
-        params.append("showAll", "true");
-      }
-      const response = await fetch(`/api/requests?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        setRequests(data);
-      }
-    };
-
-    // Initial fetch
-    fetchRequests();
-
-    // Set up interval for periodic refresh
-    const intervalId = setInterval(() => {
-      fetchRequests();
-    }, 5 * 1000); // Refresh every 5 seconds
-
-    return () => clearInterval(intervalId);
-  }, [session, showAll]);
+  // Save view preference when it changes
+  useEffect(() => {
+    localStorage.setItem("requestsViewAll", showAll.toString());
+  }, [showAll]);
 
   if (status === "loading") {
     return <div>Loading...</div>;
@@ -72,7 +53,7 @@ export default function RequestsPage() {
           </div>
           <NewRequestButton />
         </div>
-        <RequestList requests={requests} />
+        <RequestList requests={[]} />
       </div>
     </>
   );

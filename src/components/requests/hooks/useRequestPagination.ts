@@ -1,24 +1,66 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Request } from "../types";
 
 interface PaginationOptions {
-  itemsPerPage?: number;
+  pageSize?: number;
+  initialPage?: number;
 }
 
+interface PaginationState {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  pageSize: number;
+  requests: Request[];
+  isLoading: boolean;
+  isBackgroundLoading: boolean;
+  error: string | null;
+}
+
+type FetchRequestsFunction = (
+  page: number,
+  pageSize: number,
+  countOnly?: boolean
+) => Promise<{
+  requests?: Request[];
+  pagination?: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages: number;
+  };
+  count?: number;
+}>;
+
 export function useRequestPagination(
-  requests: Request[],
+  fetchRequests: FetchRequestsFunction,
   options: PaginationOptions = {}
 ) {
-  const { itemsPerPage = 10 } = options;
+  const { pageSize = 10 } = options;
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // Initialize page from URL or default to 1
-  const [currentPage, setCurrentPage] = useState(() => {
+  const initialPage = (() => {
     const pageParam = searchParams.get("page");
     return pageParam ? parseInt(pageParam, 10) : 1;
+  })();
+
+  const [state, setState] = useState<PaginationState>({
+    currentPage: initialPage,
+    totalPages: 0,
+    totalCount: 0,
+    pageSize,
+    requests: [],
+    isLoading: true,
+    isBackgroundLoading: false,
+    error: null,
   });
+
+  // Cache for preloaded pages
+  const [pageCache, setPageCache] = useState<Record<number, Request[]>>({});
 
   // Update URL when page changes
   const updateUrlPage = useCallback(
@@ -37,30 +79,178 @@ export function useRequestPagination(
     [searchParams, router]
   );
 
-  // Reset to first page when requests array changes length
+  // Load initial data and total count
   useEffect(() => {
-    const pageParam = searchParams.get("page");
-    const savedPage = pageParam ? parseInt(pageParam, 10) : 1;
-    setCurrentPage(savedPage);
-  }, [requests.length, searchParams]);
+    const loadInitialData = async () => {
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-  const totalPages = Math.ceil(requests.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedRequests = requests.slice(
-    startIndex,
-    startIndex + itemsPerPage
+      try {
+        // Cancel any in-flight requests
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+
+        // Create new abort controller for this request
+        abortControllerRef.current = new AbortController();
+
+        // Fetch the first page of data
+        const result = await fetchRequests(initialPage, pageSize);
+
+        if (result.requests && result.pagination) {
+          setState((prev) => ({
+            ...prev,
+            requests: result.requests || [],
+            currentPage: result.pagination!.page,
+            totalPages: result.pagination!.totalPages,
+            totalCount: result.pagination!.totalCount,
+            pageSize: result.pagination!.pageSize,
+            isLoading: false,
+          }));
+
+          // Cache the first page
+          setPageCache({ [initialPage]: result.requests });
+
+          // Preload the next page if it exists
+          if (initialPage < result.pagination!.totalPages) {
+            preloadPage(initialPage + 1);
+          }
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          // Request was aborted, do nothing
+          return;
+        }
+
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error:
+            error instanceof Error ? error.message : "Failed to load requests",
+        }));
+      }
+    };
+
+    loadInitialData();
+
+    // Cleanup function to abort any pending requests when component unmounts
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchRequests, initialPage, pageSize]);
+
+  // Preload a specific page in the background
+  const preloadPage = useCallback(
+    async (page: number) => {
+      // Skip if we already have this page cached
+      if (pageCache[page]) return;
+
+      try {
+        setState((prev) => ({ ...prev, isBackgroundLoading: true }));
+
+        // Fetch the page data
+        const result = await fetchRequests(page, pageSize);
+
+        if (result.requests) {
+          // Add to cache
+          setPageCache((prev) => ({ ...prev, [page]: result.requests! }));
+        }
+      } catch (error) {
+        // Silently fail for background loads
+        console.error("Failed to preload page:", error);
+      } finally {
+        setState((prev) => ({ ...prev, isBackgroundLoading: false }));
+      }
+    },
+    [fetchRequests, pageSize, pageCache]
   );
 
-  const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page);
-    updateUrlPage(page);
-    // Scroll to top of the list when page changes
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [updateUrlPage]);
+  // Handle page change
+  const handlePageChange = useCallback(
+    async (page: number) => {
+      // Update URL
+      updateUrlPage(page);
+
+      // Scroll to top of the list
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // If we have this page cached, use it immediately
+      if (pageCache[page]) {
+        setState((prev) => ({
+          ...prev,
+          currentPage: page,
+          requests: pageCache[page],
+          isLoading: false,
+        }));
+
+        // Preload the next page if it exists
+        if (page < state.totalPages) {
+          preloadPage(page + 1);
+        }
+
+        return;
+      }
+
+      // Otherwise, load the page
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
+
+      try {
+        // Cancel any in-flight requests
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+
+        // Create new abort controller for this request
+        abortControllerRef.current = new AbortController();
+
+        // Fetch the page data
+        const result = await fetchRequests(page, pageSize);
+
+        if (result.requests && result.pagination) {
+          setState((prev) => ({
+            ...prev,
+            requests: result.requests || [],
+            currentPage: page,
+            isLoading: false,
+          }));
+
+          // Cache the page
+          setPageCache((prev) => ({ ...prev, [page]: result.requests! }));
+
+          // Preload the next page if it exists
+          if (page < state.totalPages) {
+            preloadPage(page + 1);
+          }
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          // Request was aborted, do nothing
+          return;
+        }
+
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error:
+            error instanceof Error ? error.message : "Failed to load requests",
+        }));
+      }
+    },
+    [
+      updateUrlPage,
+      pageCache,
+      state.totalPages,
+      preloadPage,
+      fetchRequests,
+      pageSize,
+    ]
+  );
 
   const getVisiblePages = useCallback(() => {
     const delta = 3; // Number of pages to show before and after current page
     const pages: (number | string)[] = [];
+    const { currentPage, totalPages } = state;
 
     // Always add first page
     pages.push(1);
@@ -90,12 +280,16 @@ export function useRequestPagination(
     }
 
     return pages;
-  }, [currentPage, totalPages]);
+  }, [state]);
 
   return {
-    currentPage,
-    totalPages,
-    paginatedRequests,
+    currentPage: state.currentPage,
+    totalPages: state.totalPages,
+    totalCount: state.totalCount,
+    paginatedRequests: state.requests,
+    isLoading: state.isLoading,
+    isBackgroundLoading: state.isBackgroundLoading,
+    error: state.error,
     handlePageChange,
     getVisiblePages,
   };

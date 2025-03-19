@@ -13,7 +13,7 @@ import {
   sendCostApprovalNotifications,
 } from "@/lib/request-emails";
 
-// GET /api/requests - List all requests with optional filters
+// GET /api/requests - List all requests with optional filters and pagination
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -29,6 +29,21 @@ export async function GET(req: Request) {
     const search = searchParams.get("search");
     const includeDeleted = searchParams.get("includeDeleted") === "true";
     const showAll = searchParams.get("showAll") === "true";
+
+    // Pagination parameters
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
+    const countOnly = searchParams.get("countOnly") === "true";
+
+    // Validate pagination parameters
+    const validatedPage = Math.max(1, page);
+    const validatedPageSize = Math.min(100, Math.max(1, pageSize)); // Limit max page size to 100
+
+    const skip = (validatedPage - 1) * validatedPageSize;
+
+    const plant = searchParams.get("plant");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
 
     const where: Prisma.MustGoRequestWhereInput = {
       ...(status && { status: status as RequestStatus }),
@@ -52,6 +67,15 @@ export async function GET(req: Request) {
           },
         ],
       }),
+      // Add plant filter if provided
+      ...(plant && { plant }),
+      // Add date range filters if provided
+      ...(startDate && {
+        createdAt: {
+          ...(startDate && { gte: new Date(startDate) }),
+          ...(endDate && { lte: new Date(`${endDate}T23:59:59Z`) }),
+        },
+      }),
     };
 
     if (search) {
@@ -60,6 +84,20 @@ export async function GET(req: Request) {
           shipmentNumber: {
             contains: search,
             mode: Prisma.QueryMode.insensitive,
+          },
+        },
+        {
+          routeInfo: {
+            contains: search,
+            mode: Prisma.QueryMode.insensitive,
+          },
+        },
+        {
+          creator: {
+            name: {
+              contains: search,
+              mode: Prisma.QueryMode.insensitive,
+            },
           },
         },
         {
@@ -85,6 +123,12 @@ export async function GET(req: Request) {
           },
         },
       ];
+    }
+
+    // If countOnly is true, just return the total count
+    if (countOnly) {
+      const count = await prisma.mustGoRequest.count({ where });
+      return NextResponse.json({ count });
     }
 
     const requests = await prisma.mustGoRequest.findMany({
@@ -123,10 +167,23 @@ export async function GET(req: Request) {
       orderBy: {
         createdAt: "desc",
       },
+      skip,
+      take: validatedPageSize,
     });
 
+    // Get total count for pagination
+    const totalCount = await prisma.mustGoRequest.count({ where });
+
     // Add cache control headers for revalidation
-    const response = NextResponse.json(requests);
+    const response = NextResponse.json({
+      requests,
+      pagination: {
+        page: validatedPage,
+        pageSize: validatedPageSize,
+        totalCount,
+        totalPages: Math.ceil(totalCount / validatedPageSize),
+      },
+    });
     response.headers.set(
       "Cache-Control",
       "no-cache, no-store, must-revalidate"
