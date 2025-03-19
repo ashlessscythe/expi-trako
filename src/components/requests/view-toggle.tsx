@@ -21,8 +21,12 @@ export function ViewToggle({
       const storedValue = stored === "true";
       setShowAll(storedValue);
       onToggle(storedValue);
+    } else if (initialShowAll) {
+      // If no stored preference but initialShowAll is true, use that
+      setShowAll(initialShowAll);
+      onToggle(initialShowAll);
     }
-  }, [onToggle]);
+  }, [onToggle, initialShowAll]);
 
   const handleToggle = () => {
     const newValue = !showAll;

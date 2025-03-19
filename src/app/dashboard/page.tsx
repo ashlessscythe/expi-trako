@@ -4,10 +4,16 @@ import { Header } from "@/components/header";
 import prisma from "@/lib/prisma";
 
 async function getRequestCounts(userId: string, role: string, siteId?: string) {
+  // For customer service, get both their own requests and all requests
   const baseWhere = {
-    ...(role === "CUSTOMER_SERVICE" && { createdBy: userId }),
     ...(role !== "ADMIN" && siteId && { siteId }),
     deleted: false,
+  };
+
+  // Where clause for customer's own requests
+  const userWhere = {
+    ...baseWhere,
+    ...(role === "CUSTOMER_SERVICE" && { createdBy: userId }),
   };
 
   if (role === "WAREHOUSE") {
@@ -28,6 +34,46 @@ async function getRequestCounts(userId: string, role: string, siteId?: string) {
     });
 
     return { pendingCount, activeCount };
+  } else if (role === "CUSTOMER_SERVICE") {
+    // For customer service, show both their own active/completed counts and all counts
+    const myActiveCount = await prisma.mustGoRequest.count({
+      where: {
+        ...userWhere,
+        status: {
+          notIn: ["COMPLETED", "REJECTED", "CANCELLED", "FAILED"],
+        },
+      },
+    });
+
+    const myCompletedCount = await prisma.mustGoRequest.count({
+      where: {
+        ...userWhere,
+        status: "COMPLETED",
+      },
+    });
+
+    const allActiveCount = await prisma.mustGoRequest.count({
+      where: {
+        ...baseWhere,
+        status: {
+          notIn: ["COMPLETED", "REJECTED", "CANCELLED", "FAILED"],
+        },
+      },
+    });
+
+    const allCompletedCount = await prisma.mustGoRequest.count({
+      where: {
+        ...baseWhere,
+        status: "COMPLETED",
+      },
+    });
+
+    return {
+      activeCount: myActiveCount,
+      completedCount: myCompletedCount,
+      allActiveCount,
+      allCompletedCount,
+    };
   } else {
     const activeCount = await prisma.mustGoRequest.count({
       where: {
@@ -81,35 +127,19 @@ export default async function Dashboard() {
                 ? "View and process incoming requests. Monitor pending and active requests below."
                 : 'Click the "Requests" button above to view requests. You can track all your requests here on the dashboard.'}
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {session.user.role === "WAREHOUSE" ? (
-                <>
+            {session.user.role === "CUSTOMER_SERVICE" ? (
+              <>
+                <h3 className="text-lg font-medium mb-2">My Requests</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <div className="p-4 rounded-lg border bg-background">
-                    <h3 className="font-medium mb-2">Pending Requests</h3>
-                    <p className="text-2xl font-bold">{counts.pendingCount}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Awaiting processing
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-lg border bg-background">
-                    <h3 className="font-medium mb-2">Active Requests</h3>
-                    <p className="text-2xl font-bold">{counts.activeCount}</p>
-                    <p className="text-sm text-muted-foreground">
-                      In progress or transit
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="p-4 rounded-lg border bg-background">
-                    <h3 className="font-medium mb-2">Active Requests</h3>
+                    <h3 className="font-medium mb-2">My Active Requests</h3>
                     <p className="text-2xl font-bold">{counts.activeCount}</p>
                     <p className="text-sm text-muted-foreground">
                       Currently in progress
                     </p>
                   </div>
                   <div className="p-4 rounded-lg border bg-background">
-                    <h3 className="font-medium mb-2">Completed</h3>
+                    <h3 className="font-medium mb-2">My Completed</h3>
                     <p className="text-2xl font-bold">
                       {counts.completedCount}
                     </p>
@@ -117,9 +147,65 @@ export default async function Dashboard() {
                       Successfully processed
                     </p>
                   </div>
-                </>
-              )}
-            </div>
+                </div>
+
+                <h3 className="text-lg font-medium mb-2">All Requests</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg border bg-background">
+                    <h3 className="font-medium mb-2">All Active Requests</h3>
+                    <p className="text-2xl font-bold">
+                      {counts.allActiveCount}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Currently in progress
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-lg border bg-background">
+                    <h3 className="font-medium mb-2">All Completed</h3>
+                    <p className="text-2xl font-bold">
+                      {counts.allCompletedCount}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Successfully processed
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : session.user.role === "WAREHOUSE" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border bg-background">
+                  <h3 className="font-medium mb-2">Pending Requests</h3>
+                  <p className="text-2xl font-bold">{counts.pendingCount}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Awaiting processing
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg border bg-background">
+                  <h3 className="font-medium mb-2">Active Requests</h3>
+                  <p className="text-2xl font-bold">{counts.activeCount}</p>
+                  <p className="text-sm text-muted-foreground">
+                    In progress or transit
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg border bg-background">
+                  <h3 className="font-medium mb-2">Active Requests</h3>
+                  <p className="text-2xl font-bold">{counts.activeCount}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Currently in progress
+                  </p>
+                </div>
+                <div className="p-4 rounded-lg border bg-background">
+                  <h3 className="font-medium mb-2">Completed</h3>
+                  <p className="text-2xl font-bold">{counts.completedCount}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Successfully processed
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="rounded-lg border bg-card p-6">

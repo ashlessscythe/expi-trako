@@ -14,9 +14,10 @@ import { RequestPagination } from "./components/RequestPagination";
 import type { RequestListProps, Request, FilterState } from "./types";
 
 export default function RequestList({
-  requests: initialRequests = [],
+  requests,
   showActions = true,
 }: RequestListProps) {
+  const initialRequests = requests || [];
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
