@@ -305,9 +305,13 @@ async function generateBasicData(count, useFaker) {
 
   const generateUniqueEmail = () => {
     let email;
+    const username = faker.internet
+      .username()
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, ".");
     do {
       email = useFaker
-        ? faker.internet.email()
+        ? `${username}@example.com`
         : `user${faker.number.int(9999)}@example.com`;
     } while (usedEmails.has(email));
     usedEmails.add(email);

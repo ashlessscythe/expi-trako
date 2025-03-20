@@ -117,97 +117,105 @@ export default function StatusEditModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit Item Statuses</DialogTitle>
         </DialogHeader>
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Trailers</h3>
-            {trailers.map((trailer) => (
-              <div key={trailer.id} className="flex items-center gap-4">
-                <div className="flex flex-col min-w-[200px] gap-2">
-                  <span>Trailer: {trailer.trailer.trailerNumber}</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={trailerTransloads[trailer.id]}
-                      onChange={(e) =>
-                        setTrailerTransloads((prev) => ({
-                          ...prev,
-                          [trailer.id]: e.target.checked,
-                        }))
-                      }
-                      className="h-4 w-4 border-gray-300 rounded text-primary focus:ring-primary"
-                    />
-                    <span className="text-sm">
-                      Is this a transload trailer?
-                    </span>
+        <div className="flex-1 overflow-y-auto pr-2 -mr-2">
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Trailers</h3>
+              {trailers.map((trailer) => (
+                <div
+                  key={trailer.id}
+                  className="flex flex-col sm:flex-row sm:items-center gap-4"
+                >
+                  <div className="flex flex-col min-w-[200px] gap-2">
+                    <span>Trailer: {trailer.trailer.trailerNumber}</span>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={trailerTransloads[trailer.id]}
+                        onChange={(e) =>
+                          setTrailerTransloads((prev) => ({
+                            ...prev,
+                            [trailer.id]: e.target.checked,
+                          }))
+                        }
+                        className="h-4 w-4 border-gray-300 rounded text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm">
+                        Is this a transload trailer?
+                      </span>
+                    </div>
                   </div>
+                  <Select
+                    value={trailerStatuses[trailer.id]}
+                    onValueChange={(value: ItemStatus) =>
+                      setTrailerStatuses((prev) => ({
+                        ...prev,
+                        [trailer.id]: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(ItemStatus).map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status.replace("_", " ")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Select
-                  value={trailerStatuses[trailer.id]}
-                  onValueChange={(value: ItemStatus) =>
-                    setTrailerStatuses((prev) => ({
-                      ...prev,
-                      [trailer.id]: value,
-                    }))
-                  }
-                >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(ItemStatus).map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status.replace("_", " ")}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Parts</h3>
-            {parts.map((part) => (
-              <div key={part.id} className="flex items-center gap-4">
-                <span className="min-w-[200px]">
-                  {part.partNumber} (Trailer: {part.trailer.trailerNumber})
-                </span>
-                <Select
-                  value={partStatuses[part.id]}
-                  onValueChange={(value: ItemStatus) =>
-                    setPartStatuses((prev) => ({
-                      ...prev,
-                      [part.id]: value,
-                    }))
-                  }
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Parts</h3>
+              {parts.map((part) => (
+                <div
+                  key={part.id}
+                  className="flex flex-col sm:flex-row sm:items-center gap-4"
                 >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(ItemStatus).map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status.replace("_", " ")}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+                  <span className="min-w-[200px]">
+                    {part.partNumber} (Trailer: {part.trailer.trailerNumber})
+                  </span>
+                  <Select
+                    value={partStatuses[part.id]}
+                    onValueChange={(value: ItemStatus) =>
+                      setPartStatuses((prev) => ({
+                        ...prev,
+                        [part.id]: value,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.values(ItemStatus).map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status.replace("_", " ")}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </div>
           </div>
+        </div>
 
-          <div className="flex justify-end gap-4">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={updating}>
-              {updating ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
+        <div className="flex justify-end gap-4 pt-4 mt-4 border-t">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={updating}>
+            {updating ? "Saving..." : "Save Changes"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
