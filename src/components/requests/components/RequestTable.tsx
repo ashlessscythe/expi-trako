@@ -103,7 +103,7 @@ export function RequestTable({
           {requests.map((request) => (
             <TableRow
               key={request.id}
-              className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors duration-150"
+              className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors duration-150 hover:text-muted-foreground"
             >
               {showActions && user?.role === "ADMIN" && (
                 <TableCell className="pr-0">
@@ -129,14 +129,17 @@ export function RequestTable({
                 {Object.values(
                   (request.trailers || [])
                     .filter((t) => t.isTransload)
-                    .reduce((acc, trailer) => {
-                      const date = trailer.createdAt.split("T")[0];
-                      if (!acc[date]) {
-                        acc[date] = new Set();
-                      }
-                      acc[date].add(trailer.trailer.trailerNumber);
-                      return acc;
-                    }, {} as { [date: string]: Set<string> })
+                    .reduce(
+                      (acc, trailer) => {
+                        const date = trailer.createdAt.split("T")[0];
+                        if (!acc[date]) {
+                          acc[date] = new Set();
+                        }
+                        acc[date].add(trailer.trailer.trailerNumber);
+                        return acc;
+                      },
+                      {} as { [date: string]: Set<string> }
+                    )
                 ).reduce((sum, uniqueTrailers) => sum + uniqueTrailers.size, 0)}
               </TableCell>
               <TableCell>{request.palletCount}</TableCell>
