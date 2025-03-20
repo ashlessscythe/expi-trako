@@ -104,7 +104,7 @@ export default async function AdminDashboard() {
           </a>
           <a
             href="/reports"
-            className="block p-4 bg-secondary hover:bg-secondary/90 text-secondary-foreground rounded-lg text-center transition-colors"
+            className="block p-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-center transition-colors"
           >
             View Reports
           </a>

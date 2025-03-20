@@ -415,6 +415,27 @@ async function associateWithDefaultSite(defaultSite) {
   return { userUpdateCount, requestUpdateCount };
 }
 
+// Helper function to generate feedback messages
+function generateFeedbackMessage() {
+  const feedbackTypes = [
+    () =>
+      `The system is ${faker.word.adjective()} to use, but I would like to see ${faker.commerce.productAdjective()} improvements to the ${faker.helpers.arrayElement(["UI", "search functionality", "reporting", "notification system", "dashboard"])}`,
+    () =>
+      `I encountered an issue when trying to ${faker.helpers.arrayElement(["create a new request", "update a request status", "search for a specific shipment", "generate a report", "add a new trailer"])}`,
+    () =>
+      `It would be helpful if we could ${faker.helpers.arrayElement(["filter requests by more parameters", "have a mobile app version", "export data to Excel", "see historical trends", "get email notifications for status changes"])}`,
+    () =>
+      `The ${faker.helpers.arrayElement(["dashboard", "request form", "history view", "reporting page", "user management"])} is ${faker.word.adjective()}, but could be improved by ${faker.helpers.arrayElement(["adding more details", "simplifying the interface", "providing more guidance", "including visual indicators", "allowing customization"])}`,
+    () =>
+      `I really appreciate the recent ${faker.helpers.arrayElement(["update", "feature addition", "bug fix", "performance improvement", "UI change"])}, it has made my workflow much more ${faker.word.adjective()}`,
+  ];
+
+  return faker.helpers.arrayElement(feedbackTypes)();
+}
+
+// Define feedback statuses for random assignment
+const feedbackStatuses = ["PENDING", "REVIEWED", "RESOLVED", "DISMISSED"];
+
 // Define approval levels for email notifications
 const approvalLevels = [
   "LEVEL1", // PC Manager (0-$250)
@@ -433,7 +454,7 @@ function generateRandomEmails(count = 3, useFaker = false) {
     if (useFaker) {
       // Use faker for the username part but with consistent domain
       const username = faker.internet
-        .userName()
+        .username()
         .toLowerCase()
         .replace(/[^a-z0-9]/g, ".");
       emails.push(`${username}@example.com`);
@@ -758,13 +779,12 @@ async function main() {
         )
       );
 
-      // Create initial log
+      // Create initial log - ensure performedBy matches createdBy for consistency
       await prisma.requestLog.create({
         data: {
           mustGoRequestId: request.id,
           action: `Request created with ${parts.length} part number(s)`,
-          performedBy:
-            createdUsers[Math.floor(Math.random() * createdUsers.length)].id,
+          performedBy: request.createdBy, // Use the same user who created the request
           timestamp: createdAt,
         },
       });
@@ -780,6 +800,42 @@ async function main() {
 
   // Populate email notification levels for any existing notification lists
   await populateEmailNotificationLevels(defaultSite);
+
+  // Create feedback items
+  console.log("Creating feedback items...");
+
+  // Determine how many feedback items to create
+  const feedbackCount = Math.min(createdUsers.length, 10); // Create up to 10 feedback items
+  const feedbackItems = [];
+
+  // Create feedback from random users
+  const userIndices = new Set();
+  while (userIndices.size < feedbackCount) {
+    userIndices.add(Math.floor(Math.random() * createdUsers.length));
+  }
+
+  // Create feedback items
+  for (const userIndex of userIndices) {
+    const user = createdUsers[userIndex];
+    const feedbackDate = new Date();
+    feedbackDate.setDate(
+      feedbackDate.getDate() - faker.number.int({ min: 0, max: 30 })
+    ); // Random date in the last 30 days
+
+    const feedback = await prisma.feedback.create({
+      data: {
+        userId: user.id,
+        message: generateFeedbackMessage(),
+        status: faker.helpers.arrayElement(feedbackStatuses),
+        createdAt: feedbackDate,
+        updatedAt: feedbackDate,
+      },
+    });
+
+    feedbackItems.push(feedback);
+  }
+
+  console.log(`Created ${feedbackItems.length} feedback items`);
 
   console.log("Seed completed successfully");
 
