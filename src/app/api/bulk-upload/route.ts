@@ -190,6 +190,30 @@ function parseRawText(text: string, splitCriteria: SplitCriteria): RowData[] {
   return groupDataByCriteria(rawData, splitCriteria);
 }
 
+/**
+ * Checks if the error is related to a unique constraint violation
+ * and returns a user-friendly error message
+ */
+function getUserFriendlyErrorMessage(error: Error): string {
+  const errorMessage = error.message;
+
+  // Check for unique constraint errors on partDetail
+  if (
+    errorMessage.includes("prisma.partDetail.create()") &&
+    errorMessage.includes("Unique constraint failed")
+  ) {
+    return "Duplicate part detected: You have the same part number for the same trailer in your data. Please check your data for duplicate rows.";
+  }
+
+  // Check for other unique constraint errors
+  if (errorMessage.includes("Unique constraint failed")) {
+    return "Duplicate data detected: Your upload contains duplicate entries. Please check your data and remove any duplicates.";
+  }
+
+  // Return the original error message if it doesn't match any known patterns
+  return "Database error: " + errorMessage;
+}
+
 async function processRows(
   rows: RowData[],
   userId: string,
@@ -358,11 +382,11 @@ async function processRows(
 
       result.successfulRows++;
     } catch (error) {
-      console.error("Failed to process row");
+      console.error("Failed to process row", error);
       result.failedRows++;
       result.errors.push({
         row: i + 1,
-        errors: ["Database error: " + (error as Error).message],
+        errors: [getUserFriendlyErrorMessage(error as Error)],
       });
     }
   }
@@ -478,7 +502,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Failed to process bulk upload");
+    console.error("Failed to process bulk upload", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
