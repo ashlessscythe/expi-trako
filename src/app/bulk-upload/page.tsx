@@ -107,13 +107,16 @@ export default function BulkUploadPage() {
   // Initialize pallet counts when result changes
   useEffect(() => {
     if (result?.requests) {
-      const initialCounts = result.requests.reduce((acc, req) => {
-        acc[req.shipmentNumber] = {
-          id: req.id,
-          count: req.defaultPalletCount,
-        };
-        return acc;
-      }, {} as { [key: string]: { id: string; count: number } });
+      const initialCounts = result.requests.reduce(
+        (acc, req) => {
+          acc[req.shipmentNumber] = {
+            id: req.id,
+            count: req.defaultPalletCount,
+          };
+          return acc;
+        },
+        {} as { [key: string]: { id: string; count: number } }
+      );
       setPalletCounts(initialCounts);
     }
   }, [result]);
@@ -342,9 +345,7 @@ export default function BulkUploadPage() {
           </Card>
 
           <Card className="p-6 flex flex-col h-[350px]">
-            <h2 className="text-lg font-semibold mb-4">
-              Upload Excel/CSV File
-            </h2>
+            <h2 className="text-lg font-semibold mb-4">Upload CSV File</h2>
             <form
               onSubmit={(e) => handleSubmit(e, "file")}
               className="flex flex-col flex-1"
@@ -354,7 +355,7 @@ export default function BulkUploadPage() {
                   <input
                     type="file"
                     name="file"
-                    accept=".xlsx,.xls,.csv"
+                    accept=".csv"
                     className="block w-full text-sm text-gray-500
                       file:mr-4 file:py-2 file:px-4
                       file:rounded-md file:border-0

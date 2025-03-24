@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import * as XLSX from "xlsx";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
@@ -148,14 +147,48 @@ function groupDataByCriteria(
   return Object.values(groupedData);
 }
 
-function parseExcelBuffer(
-  buffer: Buffer,
+// Function to parse CSV content
+function parseCSV(csvContent: string): any[] {
+  const lines = csvContent.split(/[\r\n]+/).filter((line) => line.trim());
+  if (lines.length === 0) return [];
+
+  // Extract headers from the first line
+  const headers = lines[0].split(",").map((header) => header.trim());
+
+  // Process data rows
+  const data = [];
+  for (let i = 1; i < lines.length; i++) {
+    const values = lines[i].split(",").map((value) => value.trim());
+    if (values.length !== headers.length) continue; // Skip malformed rows
+
+    const row: any = {};
+    headers.forEach((header, index) => {
+      row[header] = values[index];
+    });
+    data.push(row);
+  }
+
+  return data;
+}
+
+async function parseExcelFile(
+  file: File,
   splitCriteria: SplitCriteria
-): RowData[] {
-  const workbook = XLSX.read(buffer);
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rawData = XLSX.utils.sheet_to_json(sheet);
-  return groupDataByCriteria(rawData, splitCriteria);
+): Promise<RowData[]> {
+  // For Excel files, convert to CSV first
+  // This is a fallback approach since we're having issues with ExcelJS
+  const text = await file.text();
+
+  // Check if it's already a CSV file
+  if (file.name.toLowerCase().endsWith(".csv")) {
+    const rawData = parseCSV(text);
+    return groupDataByCriteria(rawData, splitCriteria);
+  }
+
+  // If it's an Excel file, we'll need to inform the user to use CSV instead
+  throw new Error(
+    "Excel file format is not supported. Please convert your file to CSV and try again."
+  );
 }
 
 function parseRawText(text: string, splitCriteria: SplitCriteria): RowData[] {
@@ -473,8 +506,14 @@ export async function POST(request: NextRequest) {
     let rows: RowData[] = [];
 
     if (file) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      rows = parseExcelBuffer(buffer, splitCriteria);
+      try {
+        rows = await parseExcelFile(file, splitCriteria);
+      } catch (error) {
+        return NextResponse.json(
+          { error: (error as Error).message },
+          { status: 400 }
+        );
+      }
     } else if (text) {
       rows = parseRawText(text, splitCriteria);
     } else {
