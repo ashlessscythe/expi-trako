@@ -159,6 +159,7 @@ DESIGN REQUIREMENTS:
 - Professional UI
 
 BUG FIXES:
+- [X] Fixed security vulnerability in prismjs (via @react-email/components update)
 - [X] Fix reports page volume counting to properly group by date
 - [X] Fix reports page transload counting to use non-overlapping date ranges
 - [X] Add date range selection for volume and transload reports
