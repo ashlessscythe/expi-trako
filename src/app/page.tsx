@@ -7,7 +7,6 @@ import { Clock, BarChart2, Users, Truck } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { APP_NAME } from "@/lib/config";
 import { VideoPlayer } from "@/components/ui/video-player";
-import Image from "next/image";
 
 const features = [
   {
@@ -57,23 +56,6 @@ export default function Home() {
                 Streamline your expedite request process with {APP_NAME}. Track,
                 manage, and process must-go shipments efficiently in one place.
               </p>
-
-              {/* Hero Video/Animation - only shown to non-logged in users */}
-              {!user && (
-                <div className="mt-10 mx-auto max-w-4xl">
-                  <VideoPlayer
-                    gifSrc="/videos/dashbaord.gif"
-                    posterSrc="/dashboard.png"
-                    className="shadow-xl border border-border/40"
-                    caption="See the platform in action"
-                    clickToPlay={true}
-                    rounded="xl"
-                    overlay={true}
-                    objectFit="contain"
-                    autoSize={true}
-                  />
-                </div>
-              )}
 
               {!loading && (
                 <div className="mx-auto mt-10 max-w-sm sm:flex sm:max-w-none sm:justify-center">
