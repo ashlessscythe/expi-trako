@@ -42,6 +42,10 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7"
   },
+  "overrides": {
+    "prismjs": ">=1.30.0",
+    "cookie": ">=0.7.0"
+  },
   "devDependencies": {
     "@faker-js/faker": "^9.5.0",
     "@types/node": "^20",
