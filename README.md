@@ -18,6 +18,8 @@ A web application for tracking and managing "must-go" and expedite material requ
 - Role-based access control (Admin, Customer Service, Warehouse)
 - Comprehensive request tracking with status updates
 - Part information management
+- Email notifications for important events
+- Multi-site support with site-specific settings
 - Responsive design for all devices
 - Dark/Light theme support
 
@@ -58,7 +60,8 @@ _Comprehensive dashboard for performance monitoring_
 - **Styling:** Tailwind CSS with ShadCN UI components
 - **Backend:** Next.js API Routes
 - **Database:** PostgreSQL with Prisma ORM
-- **Authentication:** Local authentication with secure password handling
+- **Authentication:** NextAuth.js with JWT and secure password handling
+- **Email Service:** Resend API for transactional emails
 - **Hosting:** Vercel (Frontend) + Neon.tech (PostgreSQL)
 
 ## Getting Started
@@ -74,8 +77,8 @@ _Comprehensive dashboard for performance monitoring_
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/mg-tracko.git
-cd mg-tracko
+git clone https://github.com/ashlessscythe/expi-trako.git
+cd expi-trako
 ```
 
 2. Install dependencies:
@@ -90,7 +93,14 @@ npm install
 cp .env.example .env
 ```
 
-Edit `.env` with your database credentials and other configuration.
+Edit `.env` with your database credentials and other configuration:
+
+- `DATABASE_URL`: Your PostgreSQL connection string
+- `RESEND_API_KEY`: API key for Resend email service
+- `EMAIL_FROM_DOMAIN`: Domain for sending emails
+- `NEXTAUTH_SECRET`: Secret for NextAuth.js
+- `NEXTAUTH_URL`: URL for NextAuth.js (e.g., http://localhost:3000)
+- `NEXT_PUBLIC_APP_NAME`: Application name displayed in UI
 
 4. Initialize the database:
 
@@ -110,16 +120,49 @@ Visit `http://localhost:3000` to see the application.
 ## Project Structure
 
 ```
-mg-tracko/
+expi-trako/
 ├── src/
 │   ├── app/          # Next.js 14 app directory
+│   │   ├── api/      # API routes for backend functionality
+│   │   ├── (auth)/   # Authentication-related pages
+│   │   ├── admin/    # Admin dashboard and management
 │   ├── components/   # Reusable UI components
-│   └── lib/          # Utility functions and configurations
+│   │   ├── admin/    # Admin-specific components
+│   │   ├── requests/ # Request management components
+│   │   ├── ui/       # Shared UI components
+│   ├── lib/          # Utility functions and configurations
+│   │   ├── types/    # TypeScript type definitions
+│   │   ├── utils/    # Helper utilities
 ├── prisma/
 │   └── schema.prisma # Database schema
 ├── public/           # Static assets
+│   ├── templates/    # CSV templates for bulk uploads
+│   ├── videos/       # Tutorial and demo videos
 └── docs/            # Project documentation
 ```
+
+## Email Functionality
+
+Expi-Trak includes a comprehensive email notification system powered by the Resend API:
+
+- **Transactional Emails**: Automated emails for important events
+
+  - New user registration notifications
+  - Password reset requests
+  - Request status updates
+  - Request completion notifications
+
+- **Notification Lists**: Configure plant-specific email distribution lists
+
+  - Customizable per site and plant
+  - Different notification levels for various stakeholders
+  - Enable/disable email notifications per list
+
+- **Email Templates**: Customizable email templates for different notification types
+  - Request created notifications
+  - Request completed notifications
+  - User account notifications
+  - Password reset emails
 
 ## Available Scripts
 
