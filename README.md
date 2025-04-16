@@ -145,24 +145,68 @@ expi-trako/
 
 Expi-Trak includes a comprehensive email notification system powered by the Resend API:
 
-- **Transactional Emails**: Automated emails for important events
+### Authentication & User Management Emails
 
-  - New user registration notifications
-  - Password reset requests
-  - Request status updates
-  - Request completion notifications
+- **Password Reset Process**:
 
-- **Notification Lists**: Configure plant-specific email distribution lists
+  - Secure reset links with 1-hour expiration for security
+  - Site-specific reset functionality for multi-site deployments
+  - Branded email templates with clear instructions
+  - Confirmation email after successful password reset
 
-  - Customizable per site and plant
-  - Different notification levels for various stakeholders
-  - Enable/disable email notifications per list
+- **New User Registration**:
 
-- **Email Templates**: Customizable email templates for different notification types
-  - Request created notifications
-  - Request completed notifications
-  - User account notifications
-  - Password reset emails
+  - Welcome emails to new users upon registration
+  - Automatic admin notifications when new users register (configurable)
+  - Pending status for new accounts until admin approval
+
+- **Role Change Notifications**:
+  - Email notifications when user roles are updated
+  - Detailed information about new permissions and access levels
+  - Site-specific role assignments for multi-site deployments
+
+### Request Management Emails
+
+- **Request Creation Notifications**:
+
+  - Automatic notifications to plant-specific distribution lists
+  - Detailed request information including shipment numbers, authorization numbers, and parts
+  - Creator information for easy follow-up
+
+- **Cost Approval Notifications**:
+
+  - Tiered approval system based on estimated request cost
+  - Six approval levels with different cost thresholds:
+    - Level 1 (PC Manager): $0-$250
+    - Level 2 (Plant Controller): $250-$500
+    - Level 3 (Plant Manager): $500-$1,000
+    - Level 4 (Regional Controller): $1,000-$2,000
+    - Level 5 (Regional Operations): $2,000-$5,000
+    - Level 6 (Operations Director): >$5,000
+  - Automatic routing of approval requests to appropriate stakeholders
+
+- **Request Completion Notifications**:
+  - Automatic notifications to request creators when requests are completed
+  - Detailed summary of completed items and their status
+
+### Email Configuration
+
+- **Notification Lists**:
+
+  - Plant-specific email distribution lists
+  - Ability to assign approval levels to specific email recipients
+  - Enable/disable notifications per plant
+
+- **System Settings**:
+
+  - Configurable email settings through admin interface
+  - Toggle for new user email notifications
+  - Cost calculation settings for approval workflows
+
+- **Development Features**:
+  - Mock email mode for development environments
+  - Rate limiting (1 email per second) to prevent API abuse
+  - Detailed logging for troubleshooting
 
 ## Available Scripts
 

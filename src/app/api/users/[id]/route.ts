@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { hash } from "bcrypt";
+import { hash } from "bcryptjs";
 import { getAuthUser, isAdmin } from "@/lib/auth";
 
 export async function GET(
