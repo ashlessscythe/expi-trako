@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  output: 'standalone',
+  // Enable static optimization for better performance
+  swcMinify: true,
+  // Configure image domains if needed
+  images: {
+    domains: ['localhost'],
+  },
 };
 
 module.exports = nextConfig;
