@@ -48,13 +48,35 @@ export async function GET(req: Request) {
     const where: Prisma.MustGoRequestWhereInput = {
       ...(status && { status: status as RequestStatus }),
       ...(!includeDeleted && { deleted: false }),
+      // Customer service users: show their own requests when !showAll, or their site's requests when showAll
       ...(user.role === "CUSTOMER_SERVICE" &&
         !showAll && { createdBy: user.id }),
-      // If not admin, show requests from any of user's sites (old or new relationship) or requests without a site
-      ...(user.role !== "ADMIN" && {
+      // For warehouse users, always restrict to their own sites (no showAll toggle)
+      ...(user.role === "WAREHOUSE" && {
         OR: [
-          { siteId: null },
+          // Include requests from user's primary site (old relationship)
           ...(user.site ? [{ siteId: user.site.id }] : []),
+          // Include requests from user's associated sites (new relationship)
+          {
+            siteId: {
+              in: (
+                await prisma.userSite.findMany({
+                  where: { userId: user.id },
+                  select: { siteId: true },
+                })
+              ).map((us) => us.siteId),
+            },
+          },
+        ],
+      }),
+      // For other non-admin users (if any), restrict to their own sites
+      ...(user.role !== "ADMIN" && user.role !== "WAREHOUSE" && user.role !== "CUSTOMER_SERVICE" && {
+        OR: [
+          // Include requests without a site
+          { siteId: null },
+          // Include requests from user's primary site (old relationship)
+          ...(user.site ? [{ siteId: user.site.id }] : []),
+          // Include requests from user's associated sites (new relationship)
           {
             siteId: {
               in: (
