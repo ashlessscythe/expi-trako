@@ -24,6 +24,19 @@ export async function GET(req: Request) {
 
     const user = session.user as SessionUser;
 
+    // Debug: Log user info and their sites
+    console.log("User role:", user.role);
+    console.log("User site:", user.site);
+    
+    // Get user's associated sites once and reuse
+    const userSites = await prisma.userSite.findMany({
+      where: { userId: user.id },
+      include: {
+        site: true,
+      },
+    });
+    console.log("User associated sites:", userSites.map(us => ({ siteId: us.siteId, locationCode: us.site.locationCode })));
+
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
     const search = searchParams.get("search");
@@ -50,7 +63,34 @@ export async function GET(req: Request) {
       ...(!includeDeleted && { deleted: false }),
       // Customer service users: show their own requests when !showAll, or their site's requests when showAll
       ...(user.role === "CUSTOMER_SERVICE" &&
-        !showAll && { createdBy: user.id }),
+        !showAll && { 
+          createdBy: user.id,
+          // Also filter by site to ensure they only see their own requests from their own sites
+          OR: [
+            // Include requests from user's primary site (old relationship)
+            ...(user.site ? [{ siteId: user.site.id }] : []),
+            // Include requests from user's associated sites (new relationship)
+            {
+              siteId: {
+                in: userSites.map((us) => us.siteId),
+              },
+            },
+          ],
+        }),
+      // Customer service users: when showAll is true, restrict to their own sites (no requests without site)
+      ...(user.role === "CUSTOMER_SERVICE" &&
+        showAll && {
+        OR: [
+          // Include requests from user's primary site (old relationship)
+          ...(user.site ? [{ siteId: user.site.id }] : []),
+          // Include requests from user's associated sites (new relationship)
+          {
+            siteId: {
+              in: userSites.map((us) => us.siteId),
+            },
+          },
+        ],
+      }),
       // For warehouse users, always restrict to their own sites (no showAll toggle)
       ...(user.role === "WAREHOUSE" && {
         OR: [
@@ -59,12 +99,7 @@ export async function GET(req: Request) {
           // Include requests from user's associated sites (new relationship)
           {
             siteId: {
-              in: (
-                await prisma.userSite.findMany({
-                  where: { userId: user.id },
-                  select: { siteId: true },
-                })
-              ).map((us) => us.siteId),
+              in: userSites.map((us) => us.siteId),
             },
           },
         ],
@@ -79,12 +114,7 @@ export async function GET(req: Request) {
           // Include requests from user's associated sites (new relationship)
           {
             siteId: {
-              in: (
-                await prisma.userSite.findMany({
-                  where: { userId: user.id },
-                  select: { siteId: true },
-                })
-              ).map((us) => us.siteId),
+              in: userSites.map((us) => us.siteId),
             },
           },
         ],
@@ -100,49 +130,57 @@ export async function GET(req: Request) {
       }),
     };
 
+    // Debug: Log the where clause
+    console.log("Final where clause:", JSON.stringify(where, null, 2));
+
     if (search) {
-      where.OR = [
+      // Add search conditions to the existing where clause
+      where.AND = [
         {
-          shipmentNumber: {
-            contains: search,
-            mode: Prisma.QueryMode.insensitive,
-          },
-        },
-        {
-          routeInfo: {
-            contains: search,
-            mode: Prisma.QueryMode.insensitive,
-          },
-        },
-        {
-          creator: {
-            name: {
-              contains: search,
-              mode: Prisma.QueryMode.insensitive,
-            },
-          },
-        },
-        {
-          partDetails: {
-            some: {
-              partNumber: {
+          OR: [
+            {
+              shipmentNumber: {
                 contains: search,
                 mode: Prisma.QueryMode.insensitive,
               },
             },
-          },
-        },
-        {
-          trailers: {
-            some: {
-              trailer: {
-                trailerNumber: {
+            {
+              routeInfo: {
+                contains: search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
+            {
+              creator: {
+                name: {
                   contains: search,
                   mode: Prisma.QueryMode.insensitive,
                 },
               },
             },
-          },
+            {
+              partDetails: {
+                some: {
+                  partNumber: {
+                    contains: search,
+                    mode: Prisma.QueryMode.insensitive,
+                  },
+                },
+              },
+            },
+            {
+              trailers: {
+                some: {
+                  trailer: {
+                    trailerNumber: {
+                      contains: search,
+                      mode: Prisma.QueryMode.insensitive,
+                    },
+                  },
+                },
+              },
+            },
+          ],
         },
       ];
     }
