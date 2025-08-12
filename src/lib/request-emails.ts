@@ -4,8 +4,8 @@ import {
   getLevelsForCost,
   getLevelName,
 } from "@/lib/notification-lists";
-import { RequestCreatedEmail } from "@/components/request-created-email";
-import { RequestCompletedEmail } from "@/components/request-completed-email";
+import { RequestCreatedEmail } from "@/components/email/request-created-email";
+import { RequestCompletedEmail } from "@/components/email/request-completed-email";
 import { createElement } from "react";
 import prisma from "@/lib/prisma";
 import { ApprovalLevel } from "@prisma/client";

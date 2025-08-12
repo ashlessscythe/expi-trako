@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { RequestStatus, ItemStatus } from "@prisma/client";
 import { authOptions } from "@/lib/auth-config";
 import { sendEmail } from "@/lib/email";
-import { RequestCompletedEmail } from "@/components/request-completed-email";
+import { RequestCompletedEmail } from "@/components/email/request-completed-email";
 import { APP_NAME } from "@/lib/config";
 import * as React from "react";
 import type {

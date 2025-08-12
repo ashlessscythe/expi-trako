@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { PasswordResetEmail } from "@/components/password-reset-email";
+import { PasswordResetEmail } from "@/components/email/password-reset-email";
 import crypto from "crypto";
 import { APP_NAME, EMAIL_AT } from "@/lib/config";
 import { sendEmail } from "@/lib/email";

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { EmailTemplate } from "@/components/email-template";
+import { EmailTemplate } from "@/components/email/email-template";
 import { NewUserEmail } from "@/components/new-user-email";
 import { APP_NAME, EMAIL_AT } from "@/lib/config";
 import { sendEmail } from "@/lib/email";

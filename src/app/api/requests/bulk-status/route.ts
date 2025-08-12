@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth-config";
 import prisma from "@/lib/prisma";
 import { RequestStatus } from "@prisma/client";
 import { sendEmail as sendEmailUtil } from "@/lib/email";
-import { RequestCompletedEmail } from "@/components/request-completed-email";
+import { RequestCompletedEmail } from "@/components/email/request-completed-email";
 import { APP_NAME } from "@/lib/config";
 import * as React from "react";
 

@@ -93,7 +93,7 @@ export function EmailSettingsCard() {
       <CardContent className="space-y-6">
         <div className="flex items-center justify-between space-x-4">
           <Label htmlFor="completion-emails">
-            Send emails on request completion
+            Send action emails (completion, feedback, etc.)
           </Label>
           <Switch
             id="completion-emails"

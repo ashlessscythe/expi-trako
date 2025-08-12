@@ -4,7 +4,7 @@ import { UsersTable } from "@/components/admin/users-table";
 import { getAuthUser, isAdmin } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { sendEmail } from "@/lib/email";
-import { RoleChangeEmail } from "@/components/role-change-email";
+import { RoleChangeEmail } from "@/components/email/role-change-email";
 
 async function getData() {
   const [users, sites] = await Promise.all([
