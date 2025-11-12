@@ -11,11 +11,18 @@ export async function getAuthUser(): Promise<AuthUser> {
     redirect("/");
   }
 
-  return {
+  const authUser: AuthUser = {
     id: session.user.id,
     role: session.user.role as Role,
     site: session.user.site,
   };
+
+  // Block PENDING users from accessing protected routes
+  if (isPending(authUser)) {
+    redirect("/pending");
+  }
+
+  return authUser;
 }
 
 export function isAdmin(user: AuthUser): boolean {
@@ -36,4 +43,12 @@ export function isReportRunner(user: AuthUser): boolean {
 
 export function hasPermission(user: AuthUser, allowedRoles: Role[]): boolean {
   return allowedRoles.includes(user.role) || user.role === "ADMIN";
+}
+
+export function isPending(user: AuthUser): boolean {
+  return user.role === "PENDING";
+}
+
+export function isActiveUser(user: AuthUser): boolean {
+  return user.role !== "PENDING";
 }

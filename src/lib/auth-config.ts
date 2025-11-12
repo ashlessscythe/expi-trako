@@ -46,6 +46,11 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid password");
         }
 
+        // Prevent PENDING users from authenticating
+        if (user.role === "PENDING") {
+          throw new Error("Your account is pending approval. Please contact an administrator.");
+        }
+
         // For backwards compatibility, prioritize the old site relation
         // If not present, use the first site from userSites
         const primarySite = user.site || user.userSites[0]?.site;

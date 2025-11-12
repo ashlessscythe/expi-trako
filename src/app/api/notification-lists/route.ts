@@ -14,6 +14,12 @@ export async function GET(request: NextRequest) {
     }
 
     const user = session.user as SessionUser;
+
+    // Block PENDING users
+    if (user.role === "PENDING") {
+      return new NextResponse("Your account is pending approval", { status: 403 });
+    }
+
     if (!isAdmin({ id: user.id, role: user.role })) {
       return new NextResponse("Forbidden", { status: 403 });
     }
@@ -51,6 +57,12 @@ export async function POST(request: NextRequest) {
     }
 
     const user = session.user as SessionUser;
+
+    // Block PENDING users
+    if (user.role === "PENDING") {
+      return new NextResponse("Your account is pending approval", { status: 403 });
+    }
+
     if (!isAdmin({ id: user.id, role: user.role })) {
       return new NextResponse("Forbidden", { status: 403 });
     }
@@ -89,6 +101,12 @@ export async function PUT(request: NextRequest) {
     }
 
     const user = session.user as SessionUser;
+
+    // Block PENDING users
+    if (user.role === "PENDING") {
+      return new NextResponse("Your account is pending approval", { status: 403 });
+    }
+
     if (!isAdmin({ id: user.id, role: user.role })) {
       return new NextResponse("Forbidden", { status: 403 });
     }

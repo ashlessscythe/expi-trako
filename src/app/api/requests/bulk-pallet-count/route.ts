@@ -16,6 +16,14 @@ export async function PATCH(request: NextRequest) {
 
     const user = session.user as SessionUser;
 
+    // Block PENDING users from updating pallet counts
+    if (user.role === "PENDING") {
+      return NextResponse.json(
+        { error: "Your account is pending approval" },
+        { status: 403 }
+      );
+    }
+
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
     });

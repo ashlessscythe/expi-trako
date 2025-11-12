@@ -16,6 +16,11 @@ export async function PUT(request: Request) {
     }
 
     const user = session.user;
+
+    // Block PENDING users from bulk status updates
+    if (user.role === "PENDING") {
+      return new NextResponse("Your account is pending approval", { status: 403 });
+    }
     const { requestIds, status, sendEmail = false } = await request.json();
 
     // Verify user has permission to update these requests

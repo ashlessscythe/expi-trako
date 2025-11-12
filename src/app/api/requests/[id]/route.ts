@@ -58,6 +58,15 @@ export async function GET(
     }
 
     const user = session.user as SessionUser;
+
+    // Block PENDING users from accessing requests
+    if (user.role === "PENDING") {
+      return NextResponse.json(
+        { error: "Your account is pending approval" },
+        { status: 403 }
+      );
+    }
+
     const authUser: AuthUser = {
       id: user.id,
       role: user.role,
@@ -148,6 +157,15 @@ export async function PATCH(
     }
 
     const user = session.user as SessionUser;
+
+    // Block PENDING users from updating requests
+    if (user.role === "PENDING") {
+      return NextResponse.json(
+        { error: "Your account is pending approval" },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
 
     // Check if this is a status update
@@ -719,6 +737,14 @@ export async function DELETE(
     }
 
     const user = session.user as SessionUser;
+
+    // Block PENDING users from deleting requests
+    if (user.role === "PENDING") {
+      return NextResponse.json(
+        { error: "Your account is pending approval" },
+        { status: 403 }
+      );
+    }
 
     if (user.role !== "ADMIN") {
       return NextResponse.json(

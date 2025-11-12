@@ -20,6 +20,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Block PENDING users from submitting feedback
+    if (session.user.role === "PENDING") {
+      return NextResponse.json(
+        { error: "Your account is pending approval" },
+        { status: 403 }
+      );
+    }
+
     const { message } = await request.json();
 
     // Validate input
@@ -109,6 +117,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: "You must be logged in to access this resource" },
         { status: 401 }
+      );
+    }
+
+    // Block PENDING users
+    if (session.user.role === "PENDING") {
+      return NextResponse.json(
+        { error: "Your account is pending approval" },
+        { status: 403 }
       );
     }
 

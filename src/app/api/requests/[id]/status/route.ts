@@ -17,6 +17,15 @@ export async function PATCH(
     }
 
     const user = session.user as SessionUser;
+
+    // Block PENDING users from updating status
+    if (user.role === "PENDING") {
+      return NextResponse.json(
+        { error: "Your account is pending approval" },
+        { status: 403 }
+      );
+    }
+
     const authUser: AuthUser = {
       id: user.id,
       role: user.role,

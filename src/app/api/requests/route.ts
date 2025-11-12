@@ -269,6 +269,14 @@ export async function POST(req: Request) {
 
     const user = session.user as SessionUser;
 
+    // Block PENDING users from creating requests
+    if (user.role === "PENDING") {
+      return NextResponse.json(
+        { error: "Your account is pending approval" },
+        { status: 403 }
+      );
+    }
+
     // Verify user exists in database and get their sites
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
