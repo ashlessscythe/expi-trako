@@ -10,7 +10,8 @@ import {
   Leaf,
   Heart,
   Droplet,
-  Rocket,
+  Zap,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -186,10 +187,16 @@ export function Header() {
                     <span>Seafoam</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="rocket">
+                <SelectItem value="cyberpunk">
                   <div className="flex items-center gap-2">
-                    <Rocket className="h-4 w-4 text-blue-500" />
-                    <span>Rocket</span>
+                    <Zap className="h-4 w-4 text-green-400" />
+                    <span>Cyberpunk</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="neon">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-pink-400" />
+                    <span>Neon</span>
                   </div>
                 </SelectItem>
               </SelectContent>

@@ -17,11 +17,65 @@
 
   /* Chart colors for dark mode */
   [data-theme="dark"] {
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --chart-1: 220 75% 55%;
+    --chart-2: 160 65% 50%;
+    --chart-3: 30 85% 60%;
+    --chart-4: 280 70% 65%;
+    --chart-5: 340 80% 60%;
+  }
+
+  /* Chart colors for catppuccin */
+  [data-theme="catppuccin"] {
+    --chart-1: 310 85% 65%;
+    --chart-2: 200 80% 60%;
+    --chart-3: 280 70% 55%;
+    --chart-4: 330 75% 60%;
+    --chart-5: 250 75% 60%;
+  }
+
+  /* Chart colors for mint */
+  [data-theme="mint"] {
+    --chart-1: 150 70% 45%;
+    --chart-2: 140 65% 50%;
+    --chart-3: 160 75% 40%;
+    --chart-4: 130 70% 50%;
+    --chart-5: 170 65% 45%;
+  }
+
+  /* Chart colors for crimson */
+  [data-theme="crimson"] {
+    --chart-1: 0 80% 50%;
+    --chart-2: 10 75% 55%;
+    --chart-3: 350 85% 50%;
+    --chart-4: 5 80% 55%;
+    --chart-5: 355 75% 50%;
+  }
+
+  /* Chart colors for seafoam */
+  [data-theme="seafoam"] {
+    --chart-1: 180 70% 45%;
+    --chart-2: 170 65% 50%;
+    --chart-3: 190 75% 40%;
+    --chart-4: 175 70% 50%;
+    --chart-5: 185 65% 45%;
+  }
+
+  /* Chart colors for cyberpunk */
+  [data-theme="cyberpunk"] {
+    --chart-1: 150 100% 50%;
+    --chart-2: 180 100% 55%;
+    --chart-3: 120 100% 45%;
+    --chart-4: 160 100% 50%;
+    --chart-5: 140 100% 55%;
+  }
+
+  /* Chart colors for neon */
+  [data-theme="neon"] {
+    --chart-1: 320 100% 65%;
+    --chart-2: 180 100% 60%;
+    --chart-3: 300 100% 70%;
+    --chart-4: 340 100% 65%;
+    --chart-5: 280 100% 60%;
   }
 
   /* Fire theme chart colors */
