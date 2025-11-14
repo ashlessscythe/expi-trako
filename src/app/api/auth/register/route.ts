@@ -6,14 +6,31 @@ import { NewUserEmail } from "@/components/new-user-email";
 import { APP_NAME, EMAIL_AT } from "@/lib/config";
 import { sendEmail } from "@/lib/email";
 import { createElement } from "react";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password, siteId } = await req.json();
+    const { name, email, password, siteId, turnstileToken } = await req.json();
 
     if (!email || !password) {
       return NextResponse.json(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    // Verify Turnstile token
+    if (!turnstileToken) {
+      return NextResponse.json(
+        { error: "Please complete the security verification" },
+        { status: 400 }
+      );
+    }
+
+    const isValidToken = await verifyTurnstileToken(turnstileToken);
+    if (!isValidToken) {
+      return NextResponse.json(
+        { error: "Security verification failed. Please try again." },
         { status: 400 }
       );
     }

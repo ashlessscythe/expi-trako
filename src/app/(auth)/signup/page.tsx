@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
 import Link from "next/link";
+import { Turnstile } from "@/components/turnstile";
 
 export default function SignUp() {
   const router = useRouter();
@@ -12,10 +13,17 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!turnstileToken) {
+      setError("Please complete the security verification");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -24,7 +32,7 @@ export default function SignUp() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, turnstileToken }),
       });
 
       const data = await res.json();
@@ -102,6 +110,18 @@ export default function SignUp() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+              />
+            </div>
+            <div className="flex justify-center">
+              <Turnstile
+                onVerify={(token) => setTurnstileToken(token)}
+                onError={() => {
+                  setTurnstileToken(null);
+                  setError("Security verification failed. Please try again.");
+                }}
+                onExpire={() => {
+                  setTurnstileToken(null);
+                }}
               />
             </div>
             {error && (

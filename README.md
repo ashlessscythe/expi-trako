@@ -10,6 +10,7 @@ A modern web application for tracking and managing "must-go" and expedite materi
 - **Role-based Access**: Admin, Customer Service, and Warehouse roles
 - **Multi-site Support**: Manage multiple locations
 - **Email Notifications**: Automated alerts for important events
+- **Security Protection**: Cloudflare Turnstile protection on registration to prevent spam and abuse
 - **Responsive Design**: Works on all devices
 - **Dark/Light Theme**: Choose your preferred interface
 
@@ -84,6 +85,11 @@ A modern web application for tracking and managing "must-go" and expedite materi
    
    # Application
    NEXT_PUBLIC_APP_NAME="Expi-Trak"
+   
+   # Cloudflare Turnstile (Required for registration protection)
+   # Get your keys from: https://dash.cloudflare.com/?to=/:account/turnstile
+   NEXT_PUBLIC_TURNSTILE_SITE_KEY="your-turnstile-site-key"
+   TURNSTILE_SECRET_KEY="your-turnstile-secret-key"
    ```
 
 4. **Initialize Database**

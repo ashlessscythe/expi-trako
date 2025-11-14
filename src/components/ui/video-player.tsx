@@ -171,6 +171,7 @@ const VideoPlayer = React.forwardRef<HTMLDivElement, VideoPlayerProps>(
                 src={gifSrc}
                 alt={caption || "Animated content"}
                 fill
+                unoptimized
                 className={cn(
                   objectFit === "contain"
                     ? "object-contain"
