@@ -12,7 +12,7 @@ import { RoleSelect } from "@/components/admin/role-select";
 import { UserEditModal } from "@/components/admin/user-edit-modal";
 import { UserCard } from "@/components/admin/user-card";
 import { useRouter } from "next/navigation";
-import { Role, Site } from "@prisma/client";
+import { Site } from "@prisma/client";
 import { renderSites } from "@/hooks/userInfo";
 import { User } from "@/lib/types/user";
 

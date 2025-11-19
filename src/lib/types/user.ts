@@ -1,4 +1,4 @@
-import { User as PrismaUser, Site } from "@prisma/client";
+import { User as PrismaUser } from "@prisma/client";
 
 // Define the Site type with only the fields we need for display
 type SiteDisplay = {

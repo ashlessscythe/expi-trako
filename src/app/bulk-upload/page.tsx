@@ -67,11 +67,14 @@ export default function BulkUploadPage() {
         if (!user?.id) return;
         const response = await fetch(`/api/users/${user.id}`);
         if (!response.ok) throw new Error("Failed to fetch user sites");
-        const userData = await response.json();
+        const userData: {
+          site: Site | null;
+          userSites?: Array<{ site: Site }>;
+        } = await response.json();
 
         // Combine sites from both old and new relationships
         const userSites = [
-          ...(userData.userSites?.map((us: any) => us.site) || []),
+          ...(userData.userSites?.map((userSite) => userSite.site) || []),
           ...(userData.site ? [userData.site] : []),
         ];
 
@@ -102,7 +105,7 @@ export default function BulkUploadPage() {
     if (user?.id) {
       fetchUserSites();
     }
-  }, [user?.id]);
+  }, [toast, user?.id]);
 
   // Initialize pallet counts when result changes
   useEffect(() => {
@@ -191,7 +194,7 @@ export default function BulkUploadPage() {
     try {
       // Filter out any zero or undefined pallet counts
       const validPalletCounts = Object.entries(palletCounts).reduce(
-        (acc, [_, data]) => {
+        (acc, [, data]) => {
           if (data.count > 0) {
             acc[data.id] = data.count;
           }

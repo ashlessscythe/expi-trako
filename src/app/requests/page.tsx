@@ -12,18 +12,18 @@ import { redirect } from "next/navigation";
 // Define props interface for the RequestsContent component
 interface RequestsContentProps {
   showAll: boolean;
-  setShowAll: (value: boolean) => void;
 }
 
 // Client component that uses search params
-function RequestsContent({ showAll, setShowAll }: RequestsContentProps) {
+function RequestsContent({ showAll }: RequestsContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Function to update URL with showAll parameter
-  const updateUrlWithShowAll = (showAllValue: boolean) => {
+  // Save view preference when it changes and update URL
+  useEffect(() => {
+    localStorage.setItem("requestsViewAll", showAll.toString());
     const params = new URLSearchParams(searchParams.toString());
-    if (showAllValue) {
+    if (showAll) {
       params.set("showAll", "true");
     } else {
       params.delete("showAll");
@@ -32,13 +32,7 @@ function RequestsContent({ showAll, setShowAll }: RequestsContentProps) {
       ? `?${params.toString()}`
       : window.location.pathname;
     router.replace(newUrl, { scroll: false });
-  };
-
-  // Save view preference when it changes and update URL
-  useEffect(() => {
-    localStorage.setItem("requestsViewAll", showAll.toString());
-    updateUrlWithShowAll(showAll);
-  }, [showAll]);
+  }, [router, searchParams, showAll]);
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -86,7 +80,7 @@ export default function RequestsPage() {
     <>
       <Header />
       <Suspense fallback={<div>Loading requests...</div>}>
-        <RequestsContent showAll={showAll} setShowAll={setShowAll} />
+        <RequestsContent showAll={showAll} />
       </Suspense>
       {session.user.role === "CUSTOMER_SERVICE" && (
         <div className="container mx-auto px-4 -mt-8 mb-8">

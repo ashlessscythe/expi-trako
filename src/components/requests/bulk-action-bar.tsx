@@ -59,6 +59,7 @@ export function BulkActionBar({
 
         onStatusChange(status);
       } catch (error) {
+        console.error("Failed to update bulk request statuses", error);
         toast({
           title: "Error",
           description: "Failed to update request statuses",

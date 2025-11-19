@@ -19,9 +19,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { FeedbackStatus } from "@prisma/client";
+import type { VariantProps } from "class-variance-authority";
+
+type BadgeVariant = VariantProps<typeof badgeVariants>["variant"];
 
 interface FeedbackItem {
   id: string;
@@ -146,14 +149,14 @@ export default function AdminFeedbackPage() {
   };
 
   // Get status badge color
-  const getStatusBadgeVariant = (status: FeedbackStatus) => {
+  const getStatusBadgeVariant = (status: FeedbackStatus): BadgeVariant => {
     switch (status) {
       case "PENDING":
-        return "default";
+        return "pending";
       case "REVIEWED":
         return "secondary";
       case "RESOLVED":
-        return "success";
+        return "approved";
       case "DISMISSED":
         return "destructive";
       default:
@@ -234,9 +237,7 @@ export default function AdminFeedbackPage() {
                         {item.message}
                       </TableCell>
                       <TableCell>
-                        <Badge
-                          variant={getStatusBadgeVariant(item.status) as any}
-                        >
+                        <Badge variant={getStatusBadgeVariant(item.status)}>
                           {item.status}
                         </Badge>
                       </TableCell>

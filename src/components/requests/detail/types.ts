@@ -1,11 +1,9 @@
-import { RequestStatus, ItemStatus } from "@prisma/client";
+import { RequestStatus } from "@prisma/client";
 import type {
-  AuthUser,
   RequestDetail as RequestDetailType,
   PartDetail,
   FormData,
   FormPart,
-  FormTrailer,
 } from "@/lib/types";
 
 export interface RequestDetailProps {

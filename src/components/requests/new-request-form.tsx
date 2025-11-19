@@ -47,7 +47,6 @@ export default function NewRequestForm({
     },
   ]);
   const [sites, setSites] = useState<Site[]>([]);
-  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState<FormData & { siteId?: string }>({
     shipmentNumber: "",
     plant: "",
@@ -67,11 +66,14 @@ export default function NewRequestForm({
       try {
         const response = await fetch(`/api/users/${userId}`);
         if (!response.ok) throw new Error("Failed to fetch user sites");
-        const userData = await response.json();
+        const userData: {
+          site: Site | null;
+          userSites?: Array<{ site: Site }>;
+        } = await response.json();
 
         // Combine sites from both old and new relationships
         const userSites = [
-          ...(userData.userSites?.map((us: any) => us.site) || []),
+          ...(userData.userSites?.map((userSite) => userSite.site) || []),
           ...(userData.site ? [userData.site] : []),
         ];
 
@@ -86,8 +88,6 @@ export default function NewRequestForm({
         if (uniqueSites.length === 1) {
           setFormData((prev) => ({ ...prev, siteId: uniqueSites[0].id }));
         }
-
-        setLoading(false);
       } catch (error) {
         console.error("Failed to fetch user sites:", error);
         toast({
@@ -95,7 +95,6 @@ export default function NewRequestForm({
           description: "Failed to load sites",
           variant: "destructive",
         });
-        setLoading(false);
       }
     };
 

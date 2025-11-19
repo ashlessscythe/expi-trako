@@ -41,6 +41,7 @@ export function useRequestPagination(
   const router = useRouter();
   const searchParams = useSearchParams();
   const abortControllerRef = useRef<AbortController | null>(null);
+  const pageCacheRef = useRef<Record<number, Request[]>>({});
 
   // Initialize page from URL or default to 1
   const initialPage = (() => {
@@ -59,7 +60,7 @@ export function useRequestPagination(
     error: null,
   });
 
-  // Cache for preloaded pages
+  // Cache for preloaded pages (using ref to avoid dependency issues)
   const [pageCache, setPageCache] = useState<Record<number, Request[]>>({});
 
   // Update URL when page changes
@@ -77,6 +78,33 @@ export function useRequestPagination(
       router.replace(newUrl, { scroll: false });
     },
     [searchParams, router]
+  );
+
+  // Preload a specific page in the background
+  const preloadPage = useCallback(
+    async (page: number) => {
+      // Skip if we already have this page cached
+      if (pageCacheRef.current[page]) return;
+
+      try {
+        setState((prev) => ({ ...prev, isBackgroundLoading: true }));
+
+        // Fetch the page data
+        const result = await fetchRequests(page, pageSize);
+
+        if (result.requests) {
+          // Add to cache (both ref and state)
+          pageCacheRef.current[page] = result.requests;
+          setPageCache((prev) => ({ ...prev, [page]: result.requests! }));
+        }
+      } catch (error) {
+        // Silently fail for background loads
+        console.error("Failed to preload page:", error);
+      } finally {
+        setState((prev) => ({ ...prev, isBackgroundLoading: false }));
+      }
+    },
+    [fetchRequests, pageSize]
   );
 
   // Load initial data and total count
@@ -107,7 +135,8 @@ export function useRequestPagination(
             isLoading: false,
           }));
 
-          // Cache the first page
+          // Cache the first page (both ref and state)
+          pageCacheRef.current[initialPage] = result.requests;
           setPageCache({ [initialPage]: result.requests });
 
           // Preload the next page if it exists
@@ -138,33 +167,7 @@ export function useRequestPagination(
         abortControllerRef.current.abort();
       }
     };
-  }, [fetchRequests, initialPage, pageSize]);
-
-  // Preload a specific page in the background
-  const preloadPage = useCallback(
-    async (page: number) => {
-      // Skip if we already have this page cached
-      if (pageCache[page]) return;
-
-      try {
-        setState((prev) => ({ ...prev, isBackgroundLoading: true }));
-
-        // Fetch the page data
-        const result = await fetchRequests(page, pageSize);
-
-        if (result.requests) {
-          // Add to cache
-          setPageCache((prev) => ({ ...prev, [page]: result.requests! }));
-        }
-      } catch (error) {
-        // Silently fail for background loads
-        console.error("Failed to preload page:", error);
-      } finally {
-        setState((prev) => ({ ...prev, isBackgroundLoading: false }));
-      }
-    },
-    [fetchRequests, pageSize, pageCache]
-  );
+  }, [fetchRequests, initialPage, pageSize, preloadPage]);
 
   // Handle page change
   const handlePageChange = useCallback(
@@ -176,11 +179,11 @@ export function useRequestPagination(
       window.scrollTo({ top: 0, behavior: "smooth" });
 
       // If we have this page cached, use it immediately
-      if (pageCache[page]) {
+      if (pageCacheRef.current[page]) {
         setState((prev) => ({
           ...prev,
           currentPage: page,
-          requests: pageCache[page],
+          requests: pageCacheRef.current[page],
           isLoading: false,
         }));
 
@@ -215,7 +218,8 @@ export function useRequestPagination(
             isLoading: false,
           }));
 
-          // Cache the page
+          // Cache the page (both ref and state)
+          pageCacheRef.current[page] = result.requests!;
           setPageCache((prev) => ({ ...prev, [page]: result.requests! }));
 
           // Preload the next page if it exists

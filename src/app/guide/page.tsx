@@ -22,7 +22,7 @@ export default function GuidePage() {
                   1. Creating an Account
                 </h3>
                 <p>
-                  To get started with {APP_NAME}, you'll need to create an
+                  To get started with {APP_NAME}, you&apos;ll need to create an
                   account. Click the &quot;Sign Up&quot; button in the top right
                   corner and fill in your details.
                 </p>

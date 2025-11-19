@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { debounce } from "@/lib/utils/debounce";
 import { Button } from "@/components/ui/button";
@@ -34,14 +34,15 @@ export function RequestFilters({
   const [searchValue, setSearchValue] = useState(filters.searchQuery);
 
   // Debounced filter updates
-  const debouncedUpdate = useCallback(
-    debounce(
-      (updates: Partial<FilterState>) => {
-        onFiltersChange(updates);
-      },
-      300,
-      false
-    ),
+  const debouncedUpdate = useMemo(
+    () =>
+      debounce(
+        ((updates: Partial<FilterState>) => {
+          onFiltersChange(updates);
+        }) as (...args: unknown[]) => void,
+        300,
+        false
+      ),
     [onFiltersChange]
   );
 

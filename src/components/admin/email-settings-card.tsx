@@ -6,11 +6,18 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 
+interface RawEmailSetting {
+  key: string;
+  value: string;
+}
+
+type EmailSettingKey = "sendCompletionEmails" | "sendNewUserEmails";
+
 export function EmailSettingsCard() {
   const { toast } = useToast();
   const [settings, setSettings] = useState({
     sendCompletionEmails: true,
-    sendNewUserEmails: true
+    sendNewUserEmails: true,
   });
   const [loading, setLoading] = useState(true);
 
@@ -19,14 +26,19 @@ export function EmailSettingsCard() {
       try {
         const response = await fetch("/api/admin/settings/email");
         if (!response.ok) throw new Error("Failed to fetch settings");
-        const data = await response.json();
-        
+        const data: RawEmailSetting[] = await response.json();
+
         // Convert string values to booleans
         setSettings({
-          sendCompletionEmails: data.find((s: any) => s.key === "sendCompletionEmails")?.value === "true",
-          sendNewUserEmails: data.find((s: any) => s.key === "sendNewUserEmails")?.value === "true"
+          sendCompletionEmails:
+            data.find((setting) => setting.key === "sendCompletionEmails")
+              ?.value === "true",
+          sendNewUserEmails:
+            data.find((setting) => setting.key === "sendNewUserEmails")
+              ?.value === "true",
         });
       } catch (error) {
+        console.error("Failed to load email settings", error);
         toast({
           title: "Error",
           description: "Failed to load email settings",
@@ -40,7 +52,7 @@ export function EmailSettingsCard() {
     fetchSettings();
   }, [toast]);
 
-  const updateSetting = async (key: string, checked: boolean) => {
+  const updateSetting = async (key: EmailSettingKey, checked: boolean) => {
     try {
       const response = await fetch("/api/admin/settings/email", {
         method: "POST",
@@ -50,15 +62,15 @@ export function EmailSettingsCard() {
         body: JSON.stringify({
           key,
           value: checked.toString(),
-          type: "boolean"
+          type: "boolean",
         }),
       });
 
       if (!response.ok) throw new Error("Failed to update settings");
 
-      setSettings(prev => ({
+      setSettings((prev) => ({
         ...prev,
-        [key === "sendCompletionEmails" ? "sendCompletionEmails" : "sendNewUserEmails"]: checked
+        [key]: checked,
       }));
 
       toast({
@@ -66,6 +78,7 @@ export function EmailSettingsCard() {
         description: `${key === "sendCompletionEmails" ? "Completion" : "New user"} emails ${checked ? "enabled" : "disabled"}`,
       });
     } catch (error) {
+      console.error("Failed to update email settings", error);
       toast({
         title: "Error",
         description: "Failed to update email settings",
@@ -98,7 +111,9 @@ export function EmailSettingsCard() {
           <Switch
             id="completion-emails"
             checked={settings.sendCompletionEmails}
-            onCheckedChange={(checked) => updateSetting("sendCompletionEmails", checked)}
+            onCheckedChange={(checked) =>
+              updateSetting("sendCompletionEmails", checked)
+            }
           />
         </div>
         <div className="flex items-center justify-between space-x-4">
@@ -108,7 +123,9 @@ export function EmailSettingsCard() {
           <Switch
             id="new-user-emails"
             checked={settings.sendNewUserEmails}
-            onCheckedChange={(checked) => updateSetting("sendNewUserEmails", checked)}
+            onCheckedChange={(checked) =>
+              updateSetting("sendNewUserEmails", checked)
+            }
           />
         </div>
       </CardContent>

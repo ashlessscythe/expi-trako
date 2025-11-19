@@ -34,6 +34,7 @@ export default function ForgotPasswordPage() {
       });
       setEmail("");
     } catch (error) {
+      console.error("Failed to send forgot password request", error);
       toast({
         title: "Error",
         description: "Failed to send reset instructions. Please try again.",
@@ -49,8 +50,8 @@ export default function ForgotPasswordPage() {
       <div className="text-center mb-8">
         <h1 className="text-2xl font-bold mb-2">Reset Your Password</h1>
         <p className="text-muted-foreground">
-          Enter your email address and we'll send you instructions to reset your
-          password.
+          Enter your email address and we&apos;ll send you instructions to reset
+          your password.
         </p>
       </div>
 

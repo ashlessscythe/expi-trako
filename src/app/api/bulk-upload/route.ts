@@ -6,10 +6,7 @@ import { generateUniqueAuthNumber } from "@/hooks/useAuthNumber";
 import { isCustomerService, isAdmin, isWarehouse } from "@/lib/auth";
 import type { SessionUser, AuthUser } from "@/lib/types";
 import { RequestStatus } from "@prisma/client";
-import {
-  sendCreationNotification,
-  sendCostApprovalNotifications,
-} from "@/lib/request-emails";
+import { sendCreationNotification } from "@/lib/request-emails";
 
 interface PartData {
   partNumber: string;
@@ -47,10 +44,9 @@ interface ProcessResult {
 
 type SplitCriteria = "shipment" | "trailer" | "route" | "part";
 
-function validateRow(
-  row: RowData,
-  rowIndex: number
-): { isValid: boolean; errors: string[] } {
+type RawDataRow = Record<string, string | number | undefined>;
+
+function validateRow(row: RowData): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
 
   if (!row.shipmentNumber) {
@@ -79,7 +75,7 @@ function validateRow(
 }
 
 function groupDataByCriteria(
-  rawData: any[],
+  rawData: RawDataRow[],
   splitCriteria: SplitCriteria
 ): RowData[] {
   const groupedData: { [key: string]: RowData } = {};
@@ -148,7 +144,7 @@ function groupDataByCriteria(
 }
 
 // Function to parse CSV content
-function parseCSV(csvContent: string): any[] {
+function parseCSV(csvContent: string): RawDataRow[] {
   const lines = csvContent.split(/[\r\n]+/).filter((line) => line.trim());
   if (lines.length === 0) return [];
 
@@ -156,12 +152,12 @@ function parseCSV(csvContent: string): any[] {
   const headers = lines[0].split(",").map((header) => header.trim());
 
   // Process data rows
-  const data = [];
+  const data: RawDataRow[] = [];
   for (let i = 1; i < lines.length; i++) {
     const values = lines[i].split(",").map((value) => value.trim());
     if (values.length !== headers.length) continue; // Skip malformed rows
 
-    const row: any = {};
+    const row: RawDataRow = {};
     headers.forEach((header, index) => {
       row[header] = values[index];
     });
@@ -198,17 +194,8 @@ function parseRawText(text: string, splitCriteria: SplitCriteria): RowData[] {
 
   const rawData = dataLines.map((line) => {
     const parts = line.split(/[\t,]+/).map((part) => part.trim());
-    const [
-      shipmentNumber,
-      delivery,
-      plant,
-      customerPN,
-      delphiPN,
-      mgQty,
-      instructions,
-      trailerNumber,
-      qty,
-    ] = parts;
+    const [shipmentNumber, , plant, , delphiPN, mgQty, instructions, trailerNumber, qty] =
+      parts;
 
     return {
       SHIPMENT: shipmentNumber,
@@ -265,7 +252,7 @@ async function processRows(
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const validation = validateRow(row, i);
+    const validation = validateRow(row);
 
     if (!validation.isValid) {
       result.failedRows++;

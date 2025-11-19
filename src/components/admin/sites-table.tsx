@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Table,
@@ -28,17 +28,14 @@ export function SitesTable() {
   const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchSites();
-  }, []);
-
-  const fetchSites = async () => {
+  const fetchSites = useCallback(async () => {
     try {
       const response = await fetch("/api/sites");
       if (!response.ok) throw new Error("Failed to fetch sites");
       const data = await response.json();
       setSites(data);
     } catch (error) {
+      console.error("Failed to fetch sites", error);
       toast({
         title: "Error",
         description: "Failed to fetch sites",
@@ -47,7 +44,11 @@ export function SitesTable() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    fetchSites();
+  }, [fetchSites]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -69,6 +70,7 @@ export function SitesTable() {
       fetchSites();
       router.refresh();
     } catch (error) {
+      console.error("Failed to delete site", error);
       toast({
         title: "Error",
         description: "Failed to delete site",

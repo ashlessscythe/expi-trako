@@ -8,7 +8,6 @@ import { RequestCreatedEmail } from "@/components/email/request-created-email";
 import { RequestCompletedEmail } from "@/components/email/request-completed-email";
 import { createElement } from "react";
 import prisma from "@/lib/prisma";
-import { ApprovalLevel } from "@prisma/client";
 
 type RequestDetails = {
   id: string;
@@ -33,14 +32,6 @@ type RequestDetails = {
     status?: string;
   }>;
 };
-
-// Define local approval level interface for internal use
-interface ApprovalLevelInfo {
-  name: string;
-  minAmount: number;
-  maxAmount: number | null;
-  emails: string[];
-}
 
 // Send notification to plant distribution list when request is created
 export const sendCreationNotification = async (request: RequestDetails) => {
@@ -91,7 +82,7 @@ export const sendCreationNotification = async (request: RequestDetails) => {
       await sendEmail({
         to: notificationEmails,
         subject: `New Request Created - ${request.shipmentNumber}`,
-        react: createElement(RequestCreatedEmail as any, emailProps),
+        react: createElement(RequestCreatedEmail, emailProps),
       });
 
       console.log("Creation notification email sent successfully");
@@ -201,7 +192,7 @@ export const sendCostApprovalNotifications = async (
     await sendEmail({
       to: notificationEmails,
       subject: `Notification of estimated request cost: (${levelNamesString}) - ${request.shipmentNumber} - $${totalCost.toFixed(2)}`,
-      react: createElement(RequestCreatedEmail as any, emailProps),
+      react: createElement(RequestCreatedEmail, emailProps),
     });
 
     console.log("Cost approval notification email sent successfully");
@@ -238,7 +229,7 @@ export const sendCompletionNotification = async (request: RequestDetails) => {
     await sendEmail({
       to: [request.creator.email],
       subject: `Request Completed - ${request.shipmentNumber}`,
-      react: createElement(RequestCompletedEmail as any, emailProps),
+      react: createElement(RequestCompletedEmail, emailProps),
     });
 
     console.log("Completion notification email sent successfully");

@@ -103,7 +103,7 @@ export default function Home() {
             </div>
             <div className="mx-auto mt-16 max-w-7xl sm:mt-20 lg:mt-24">
               <div className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:max-w-none lg:grid-cols-4">
-                {features.map(({ name, description, icon: Icon }, index) => (
+                {features.map(({ name, description, icon: Icon }) => (
                   <div
                     key={name}
                     className="relative flex flex-col gap-6 border rounded-lg p-6 transform transition-transform duration-300 hover:scale-105"
@@ -202,7 +202,7 @@ export default function Home() {
                     </h3>
                     <p className="text-base leading-7 text-muted-foreground">
                       Find answers to commonly asked questions about account
-                      management, data security, and using {APP_NAME}'s
+                      management, data security, and using {APP_NAME}&apos;s
                       features.
                     </p>
                   </div>

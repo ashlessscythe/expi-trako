@@ -47,7 +47,7 @@ export async function POST(
 
     return NextResponse.json(undeletedRequest);
   } catch (error) {
-    console.error("Failed to undelete request");
+    console.error("Failed to undelete request", error);
     return NextResponse.json(
       { error: "Failed to undelete request" },
       { status: 500 }

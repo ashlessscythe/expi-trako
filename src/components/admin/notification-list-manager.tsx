@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -32,7 +31,6 @@ type NotificationList = {
 };
 
 export function NotificationListManager() {
-  const router = useRouter();
   const [selectedSite, setSelectedSite] = useState<string>("");
   const [selectedPlant, setSelectedPlant] = useState<string>("");
   const [emailInput, setEmailInput] = useState<string>("");
@@ -40,7 +38,6 @@ export function NotificationListManager() {
     useState<NotificationList | null>(null);
   const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
   const [plants, setPlants] = useState<string[]>([]);
-  const [enabled, setEnabled] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Load sites on component mount
@@ -50,6 +47,7 @@ export function NotificationListManager() {
       const data = await response.json();
       setSites(data);
     } catch (error) {
+      console.error("Failed to load sites", error);
       toast({
         title: "Error",
         description: "Failed to load sites",
@@ -65,6 +63,7 @@ export function NotificationListManager() {
       const data = await response.json();
       setPlants(data);
     } catch (error) {
+      console.error("Failed to load plants", error);
       toast({
         title: "Error",
         description: "Failed to load plants",
@@ -82,6 +81,7 @@ export function NotificationListManager() {
       const data = await response.json();
       setNotificationList(data);
     } catch (error) {
+      console.error("Failed to load notification list", error);
       setNotificationList(null);
     }
   };
@@ -171,6 +171,7 @@ export function NotificationListManager() {
         description: "Email added to notification list",
       });
     } catch (error) {
+      console.error("Failed to add email to notification list", error);
       toast({
         title: "Error",
         description: "Failed to update notification list",
@@ -218,6 +219,7 @@ export function NotificationListManager() {
         description: "Email removed from notification list",
       });
     } catch (error) {
+      console.error("Failed to remove email from notification list", error);
       toast({
         title: "Error",
         description: "Failed to update notification list",
@@ -263,6 +265,7 @@ export function NotificationListManager() {
         description: "Email level updated",
       });
     } catch (error) {
+      console.error("Failed to update email level", error);
       toast({
         title: "Error",
         description: "Failed to update email level",
@@ -415,6 +418,10 @@ export function NotificationListManager() {
                           description: `Notifications ${checked ? "enabled" : "disabled"} for this plant`,
                         });
                       } catch (error) {
+                        console.error(
+                          "Failed to update notification enabled state",
+                          error
+                        );
                         toast({
                           title: "Error",
                           description: "Failed to update notification settings",

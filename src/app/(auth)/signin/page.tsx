@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Header } from "@/components/header";
 import Link from "next/link";
-import type { Site } from "@/lib/types";
 
 export default function SignIn() {
   const router = useRouter();

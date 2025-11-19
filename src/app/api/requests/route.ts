@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { RequestStatus, Prisma } from "@prisma/client";
-import { faker } from "@faker-js/faker";
 import { authOptions } from "@/lib/auth-config";
 
 import { generateUniqueAuthNumber } from "@/hooks/useAuthNumber";
@@ -24,10 +23,6 @@ export async function GET(req: Request) {
 
     const user = session.user as SessionUser;
 
-    // Debug: Log user info and their sites
-    console.log("User role:", user.role);
-    console.log("User site:", user.site);
-    
     // Get user's associated sites once and reuse
     const userSites = await prisma.userSite.findMany({
       where: { userId: user.id },
@@ -35,7 +30,6 @@ export async function GET(req: Request) {
         site: true,
       },
     });
-    console.log("User associated sites:", userSites.map(us => ({ siteId: us.siteId, locationCode: us.site.locationCode })));
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get("status");
@@ -129,9 +123,6 @@ export async function GET(req: Request) {
         },
       }),
     };
-
-    // Debug: Log the where clause
-    console.log("Final where clause:", JSON.stringify(where, null, 2));
 
     if (search) {
       // Add search conditions to the existing where clause
@@ -250,7 +241,7 @@ export async function GET(req: Request) {
     );
     return response;
   } catch (error) {
-    console.error("Failed to fetch requests");
+    console.error("Failed to fetch requests", error);
     return NextResponse.json(
       { error: "Failed to fetch requests" },
       { status: 500 }

@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthUser, isAdmin } from "@/lib/auth";
 
-export async function GET(request: NextRequest) {
+export const dynamic = 'force-dynamic';
+
+export async function GET() {
   try {
     const authUser = await getAuthUser();
     if (!authUser || !isAdmin(authUser)) {
@@ -66,6 +68,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    console.error("Failed to fetch transload trailers", error);
     return NextResponse.json(
       { error: "Failed to fetch transload trailers" },
       { status: 500 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -131,8 +131,11 @@ export function Turnstile({ onVerify, onError, onExpire }: TurnstileProps) {
         try {
           window.turnstile.remove(widgetIdRef.current);
           widgetIdRef.current = null;
-        } catch (e) {
-          // Ignore errors during cleanup
+        } catch (cleanupError) {
+          console.warn(
+            "Failed to remove Turnstile widget during cleanup",
+            cleanupError
+          );
         }
       }
     };

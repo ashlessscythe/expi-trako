@@ -3,6 +3,11 @@ import { Button } from "@/components/ui/button";
 import { RequestInfoCardProps } from "./types";
 import { useEffect, useState } from "react";
 
+interface RawSystemSetting {
+  key: string;
+  value: string;
+}
+
 interface Settings {
   costPerPallet: number;
   enableCostCalculation: boolean;
@@ -23,15 +28,15 @@ export function RequestInfoCard({
       try {
         const response = await fetch("/api/admin/settings");
         if (!response.ok) throw new Error("Failed to fetch settings");
-        const data = await response.json();
+        const data: RawSystemSetting[] = await response.json();
 
         setSettings({
           costPerPallet: Number(
-            data.find((s: any) => s.key === "costPerPallet")?.value || 0
+            data.find((setting) => setting.key === "costPerPallet")?.value || 0
           ),
           enableCostCalculation:
-            data.find((s: any) => s.key === "enableCostCalculation")?.value ===
-            "true",
+            data.find((setting) => setting.key === "enableCostCalculation")
+              ?.value === "true",
         });
       } catch (error) {
         console.error("Failed to load settings:", error);

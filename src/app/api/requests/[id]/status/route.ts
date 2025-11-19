@@ -209,7 +209,7 @@ export async function PATCH(
 
     return NextResponse.json(updatedRequest);
   } catch (error) {
-    console.error("Failed to update item statuses");
+    console.error("Failed to update item statuses", error);
     return NextResponse.json(
       { error: "Failed to update item statuses" },
       { status: 500 }

@@ -13,11 +13,7 @@ import { RequestFilters } from "./components/RequestFilters";
 import { RequestPagination } from "./components/RequestPagination";
 import type { RequestListProps, Request, FilterState } from "./types";
 
-export default function RequestList({
-  requests,
-  showActions = true,
-}: RequestListProps) {
-  const initialRequests = requests || [];
+export default function RequestList({ showActions = true }: RequestListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -93,7 +89,7 @@ export default function RequestList({
       filters.plantFilter,
       filters.dateRange.start,
       filters.dateRange.end,
-      searchParams,
+      searchParams.toString(),
     ]
   );
 
@@ -101,13 +97,11 @@ export default function RequestList({
   const {
     currentPage,
     totalPages,
-    totalCount,
     paginatedRequests,
     isLoading,
     isBackgroundLoading,
     error,
     handlePageChange,
-    getVisiblePages,
   } = useRequestPagination(fetchRequests);
 
   // Function to clear filters
@@ -219,7 +213,8 @@ export default function RequestList({
     }
   };
 
-  const handleBulkStatusChange = (newStatus: RequestStatus) => {
+  const handleBulkStatusChange = (_newStatus: RequestStatus) => {
+    void _newStatus;
     // Optimistically update UI
     setSelectedRequests([]);
     // Refresh in background to ensure data consistency

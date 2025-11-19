@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { EditRequestFormProps } from "./types";
 import { useState } from "react";
-import type { FormData, FormTrailer } from "@/lib/types";
+import type { FormData } from "@/lib/types";
 
 export function EditRequestForm({
   initialData,

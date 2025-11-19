@@ -12,6 +12,11 @@ interface SystemSettings {
   enableCostCalculation: boolean;
 }
 
+interface RawSystemSetting {
+  key: string;
+  value: string;
+}
+
 export function CostSettingsCard() {
   const [settings, setSettings] = useState<SystemSettings>({
     costPerPallet: 0,
@@ -26,17 +31,18 @@ export function CostSettingsCard() {
       try {
         const response = await fetch("/api/admin/settings");
         if (!response.ok) throw new Error("Failed to fetch settings");
-        const data = await response.json();
+        const data: RawSystemSetting[] = await response.json();
 
         setSettings({
           costPerPallet: Number(
-            data.find((s: any) => s.key === "costPerPallet")?.value || 0
+            data.find((setting) => setting.key === "costPerPallet")?.value || 0
           ),
           enableCostCalculation:
-            data.find((s: any) => s.key === "enableCostCalculation")?.value ===
-            "true",
+            data.find((setting) => setting.key === "enableCostCalculation")
+              ?.value === "true",
         });
       } catch (error) {
+        console.error("Failed to load cost settings", error);
         toast({
           title: "Error",
           description: "Failed to load settings",
@@ -78,6 +84,7 @@ export function CostSettingsCard() {
         description: "Settings saved successfully",
       });
     } catch (error) {
+      console.error("Failed to save cost settings", error);
       toast({
         title: "Error",
         description: "Failed to save settings",

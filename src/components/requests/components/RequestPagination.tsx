@@ -76,7 +76,7 @@ export function RequestPagination({
         Previous
       </Button>
       <div className="flex items-center gap-1">
-        {getVisiblePages().map((page, index) =>
+        {getVisiblePages().map((page) =>
           typeof page === "number"
             ? renderPageButton(page)
             : renderEllipsis(page)

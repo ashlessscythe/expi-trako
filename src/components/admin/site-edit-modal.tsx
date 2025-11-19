@@ -53,6 +53,7 @@ export function SiteEditModal({ site, open, onOpenChange, onSuccess }: SiteEditM
       onSuccess();
       onOpenChange(false);
     } catch (error) {
+      console.error("Failed to save site", error);
       toast({
         title: "Error",
         description: `Failed to ${site ? "update" : "create"} site`,

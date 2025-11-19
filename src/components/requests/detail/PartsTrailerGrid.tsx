@@ -1,6 +1,33 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Badge, badgeVariants } from "@/components/ui/badge";
 import { PartsTrailerGridProps } from "./types";
+import type { VariantProps } from "class-variance-authority";
+
+type BadgeVariant = VariantProps<typeof badgeVariants>["variant"];
+
+const statusVariantMap: Record<string, BadgeVariant> = {
+  PENDING: "pending",
+  REPORTING: "reporting",
+  APPROVED: "approved",
+  REJECTED: "rejected",
+  COMPLETED: "completed",
+  IN_PROGRESS: "in_progress",
+  INTRANSIT: "in_transit",
+  IN_TRANSIT: "in_transit",
+  LOADING: "in_progress",
+  ARRIVED: "completed",
+  CANCELED: "canceled",
+  CANCELLED: "canceled",
+  ON_HOLD: "on_hold",
+  FAILED: "destructive",
+};
+
+const getStatusVariant = (status?: string | null): BadgeVariant => {
+  if (!status) {
+    return "pending";
+  }
+  return statusVariantMap[status] || "default";
+};
 
 export function PartsTrailerGrid({
   partsByTrailer,
@@ -24,13 +51,11 @@ export function PartsTrailerGrid({
                       <Badge variant="secondary">Transload</Badge>
                     )}
                     <Badge
-                      variant={
-                        (
-                          trailers.find(
-                            (t) => t.trailer.trailerNumber === trailerNumber
-                          )?.status || "PENDING"
-                        ).toLowerCase() as any
-                      }
+                      variant={getStatusVariant(
+                        trailers.find(
+                          (t) => t.trailer.trailerNumber === trailerNumber
+                        )?.status
+                      )}
                     >
                       {trailers
                         .find((t) => t.trailer.trailerNumber === trailerNumber)
@@ -48,13 +73,11 @@ export function PartsTrailerGrid({
                         <div className="flex items-center gap-2">
                           <span>{part.partNumber}</span>
                           <Badge
-                            variant={
-                              (
-                                partDetails.find(
-                                  (p) => p.partNumber === part.partNumber
-                                )?.status || "PENDING"
-                              ).toLowerCase() as any
-                            }
+                            variant={getStatusVariant(
+                              partDetails.find(
+                                (p) => p.partNumber === part.partNumber
+                              )?.status
+                            )}
                           >
                             {partDetails
                               .find((p) => p.partNumber === part.partNumber)

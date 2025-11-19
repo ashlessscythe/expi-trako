@@ -74,7 +74,6 @@ export type SortField =
 export type SortDirection = "asc" | "desc";
 
 export interface RequestListProps {
-  requests?: Request[];
   showActions?: boolean;
 }
 

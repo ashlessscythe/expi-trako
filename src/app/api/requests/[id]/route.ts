@@ -11,7 +11,6 @@ import type {
   AuthUser,
   SessionUser,
   UpdateRequestData,
-  PartDetail,
 } from "@/lib/types";
 import { isWarehouse, isAdmin, isCustomerService } from "@/lib/auth";
 
@@ -137,7 +136,7 @@ export async function GET(
       canEdit,
     });
   } catch (error) {
-    console.error("Failed to fetch request");
+    console.error("Failed to fetch request", error);
     return NextResponse.json(
       { error: "Failed to fetch request" },
       { status: 500 }
@@ -206,7 +205,10 @@ export async function PATCH(
         );
       }
 
-      const updateData: any = {};
+      const updateData: {
+        status?: RequestStatus;
+        notes?: string[];
+      } = {};
       if (status) {
         updateData.status = status;
       }
@@ -334,7 +336,7 @@ export async function PATCH(
             }),
           });
         } catch (emailError) {
-          console.error("Failed to send completion notification");
+          console.error("Failed to send completion notification", emailError);
           // Continue with the request even if email fails
         }
       }
@@ -470,9 +472,6 @@ export async function PATCH(
 
     // Create a map of current trailer numbers to their new numbers
     const trailerMap = new Map<string, string>();
-    const currentTrailers = new Set(
-      request.trailers.map((t) => t.trailer.trailerNumber)
-    );
     const newTrailers = new Set(trailers.map((t) => t.trailerNumber));
 
     // Find trailer number changes by matching parts
@@ -718,7 +717,7 @@ export async function PATCH(
     ) {
       return NextResponse.json({ error: "Request not found" }, { status: 404 });
     }
-    console.error("Failed to update request");
+    console.error("Failed to update request", error);
     return NextResponse.json(
       { error: "Failed to update request" },
       { status: 500 }
@@ -777,7 +776,7 @@ export async function DELETE(
 
     return NextResponse.json(deletedRequest);
   } catch (error) {
-    console.error("Failed to delete request");
+    console.error("Failed to delete request", error);
     return NextResponse.json(
       { error: "Failed to delete request" },
       { status: 500 }

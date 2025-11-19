@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user with both new and old site relationships
-    const user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         name,
         email,

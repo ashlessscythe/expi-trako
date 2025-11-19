@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { hash } from "bcryptjs";
 import { getAuthUser, isAdmin } from "@/lib/auth";
+import type { Prisma } from "@prisma/client";
 
 export async function GET(
   request: NextRequest,
@@ -30,9 +31,11 @@ export async function GET(
     }
 
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: passwordHash, ...userWithoutPassword } = user;
+    void passwordHash;
     return NextResponse.json(userWithoutPassword);
   } catch (error) {
+    console.error("Failed to fetch user", error);
     return NextResponse.json(
       { error: "Failed to fetch user" },
       { status: 500 }
@@ -53,11 +56,14 @@ export async function PATCH(
     const data = await request.json();
     const { name, email, password, sites } = data;
 
-    // Prepare update data
-    const updateData: any = {
-      name,
-      email,
-    };
+    const updateData: Prisma.UserUpdateInput & { siteId?: string | null } = {};
+
+    if (typeof name === "string") {
+      updateData.name = name;
+    }
+    if (typeof email === "string") {
+      updateData.email = email;
+    }
 
     // Only update password if provided
     if (password) {
@@ -71,14 +77,14 @@ export async function PATCH(
 
       // Update userSites relationship
       updateData.userSites = {
-        deleteMany: {}, // Remove all existing relationships
-        create: sites.map((siteId) => ({ siteId })), // Create new relationships
+        deleteMany: { userId: params.id },
+        create: sites.map((siteId) => ({ siteId })),
       };
     }
 
     const updatedUser = await prisma.user.update({
       where: { id: params.id },
-      data: updateData,
+      data: updateData as Prisma.UserUpdateInput,
       include: {
         site: true,
         userSites: {
@@ -90,9 +96,12 @@ export async function PATCH(
     });
 
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = updatedUser;
+    const { password: updatedPasswordHash, ...userWithoutPassword } =
+      updatedUser;
+    void updatedPasswordHash;
     return NextResponse.json(userWithoutPassword);
   } catch (error) {
+    console.error("Failed to update user", error);
     return NextResponse.json(
       { error: "Failed to update user" },
       { status: 500 }

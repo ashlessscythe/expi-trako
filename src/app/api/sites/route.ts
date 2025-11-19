@@ -28,6 +28,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(site);
   } catch (error) {
+    console.error("Failed to create site", error);
     return NextResponse.json(
       { error: "Failed to create site" },
       { status: 500 }
@@ -61,6 +62,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(site);
   } catch (error) {
+    console.error("Failed to update site", error);
     return NextResponse.json(
       { error: "Failed to update site" },
       { status: 500 }
@@ -93,6 +95,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error("Failed to delete site", error);
     return NextResponse.json(
       { error: "Failed to delete site" },
       { status: 500 }
@@ -123,6 +126,7 @@ export async function GET() {
 
     return NextResponse.json(sites);
   } catch (error) {
+    console.error("Failed to fetch sites", error);
     return NextResponse.json(
       { error: "Failed to fetch sites" },
       { status: 500 }

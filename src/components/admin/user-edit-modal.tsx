@@ -62,6 +62,7 @@ export function UserEditModal({ user, sites, onUpdate }: UserEditModalProps) {
       onUpdate();
       setOpen(false);
     } catch (error) {
+      console.error("Failed to update user", error);
       toast({
         title: "Error",
         description: "Failed to update user",

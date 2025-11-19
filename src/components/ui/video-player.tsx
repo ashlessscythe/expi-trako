@@ -105,27 +105,23 @@ const VideoPlayer = React.forwardRef<HTMLDivElement, VideoPlayerProps>(
     // Handle video metadata loaded to get natural dimensions
     React.useEffect(() => {
       if (autoSize && videoRef.current) {
+        const videoElement = videoRef.current;
         const handleMetadataLoaded = () => {
-          if (videoRef.current) {
-            setDimensions({
-              width: videoRef.current.videoWidth,
-              height: videoRef.current.videoHeight,
-            });
-          }
+          setDimensions({
+            width: videoElement.videoWidth,
+            height: videoElement.videoHeight,
+          });
         };
 
-        videoRef.current.addEventListener(
-          "loadedmetadata",
-          handleMetadataLoaded
-        );
+        videoElement.addEventListener("loadedmetadata", handleMetadataLoaded);
 
         // If video is already loaded, get dimensions immediately
-        if (videoRef.current.readyState >= 1) {
+        if (videoElement.readyState >= 1) {
           handleMetadataLoaded();
         }
 
         return () => {
-          videoRef.current?.removeEventListener(
+          videoElement.removeEventListener(
             "loadedmetadata",
             handleMetadataLoaded
           );

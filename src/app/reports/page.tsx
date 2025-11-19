@@ -18,6 +18,7 @@ import {
   VolumeChart,
 } from "@/components/reports/charts";
 import { DateRange } from "@/components/reports/date-range";
+import type { Session } from "next-auth";
 
 // Add searchParams for date ranges
 export interface PageProps {
@@ -34,6 +35,15 @@ interface DailyRequestCount {
   count: bigint;
 }
 
+type ReportsSession = Session & {
+  user: Session["user"] & {
+    role: string;
+    site?: {
+      id: string;
+    } | null;
+  };
+};
+
 async function getReportData(
   dateRanges: {
     volumeStart?: string;
@@ -41,7 +51,7 @@ async function getReportData(
     transloadStart?: string;
     transloadEnd?: string;
   },
-  session: any
+  session: ReportsSession
 ) {
   // Create base where clause for site filtering
   const baseWhere =

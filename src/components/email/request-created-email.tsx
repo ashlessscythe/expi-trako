@@ -18,6 +18,9 @@ interface RequestCreatedEmailProps {
     name: string;
     email: string;
   };
+  palletCount?: number;
+  totalCost?: string;
+  approvalLevels?: string;
 }
 
 export const RequestCreatedEmail: React.FC<
@@ -28,6 +31,9 @@ export const RequestCreatedEmail: React.FC<
   authorizationNumber,
   requestDetails,
   creator,
+  palletCount,
+  totalCost,
+  approvalLevels,
 }) => (
   <div
     style={{
@@ -171,6 +177,43 @@ export const RequestCreatedEmail: React.FC<
             </tr>
           </tbody>
         </table>
+
+        {(palletCount !== undefined || totalCost || approvalLevels) && (
+          <div
+            style={{
+              marginTop: "15px",
+              padding: "15px",
+              backgroundColor: "#fdf6e3",
+              borderRadius: "6px",
+              border: "1px solid #fbd38d",
+            }}
+          >
+            <h3
+              style={{
+                color: "#B7791F",
+                fontSize: "16px",
+                margin: "0 0 10px",
+                fontWeight: "600",
+              }}
+            >
+              Cost Details
+            </h3>
+            <ul
+              style={{
+                margin: 0,
+                paddingLeft: "20px",
+                color: "#744210",
+                lineHeight: "1.6",
+              }}
+            >
+              {palletCount !== undefined && (
+                <li>Pallet Count: {palletCount}</li>
+              )}
+              {totalCost && <li>Estimated Cost: ${totalCost}</li>}
+              {approvalLevels && <li>Approval Levels: {approvalLevels}</li>}
+            </ul>
+          </div>
+        )}
 
         {requestDetails.trailers.length > 0 && (
           <>

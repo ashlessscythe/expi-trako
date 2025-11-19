@@ -6,6 +6,8 @@ import { sendEmail } from "@/lib/email";
 import { FeedbackSubmittedEmail } from "@/components/email/feedback-submitted-email";
 import { APP_NAME, EMAIL_AT } from "@/lib/config";
 import { createElement } from "react";
+import { FeedbackStatus } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 // POST /api/feedback - Create new feedback
 export async function POST(request: NextRequest) {
@@ -143,9 +145,9 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // Build where clause for filtering
-    const where: any = {};
-    if (status) {
-      where.status = status;
+    const where: Prisma.FeedbackWhereInput = {};
+    if (status && Object.values(FeedbackStatus).includes(status as FeedbackStatus)) {
+      where.status = status as FeedbackStatus;
     }
 
     // Get feedback with pagination

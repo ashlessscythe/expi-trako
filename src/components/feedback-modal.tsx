@@ -94,7 +94,9 @@ export function FeedbackModal({ open, onOpenChange }: FeedbackModalProps) {
             </DialogTitle>
             <DialogDescription>
               We value your feedback! Please let us know how we can improve your
-              experience. You'll receive an email confirmation when your feedback is submitted, and another notification when it's reviewed by our team.
+              experience. You&apos;ll receive an email confirmation when your
+              feedback is submitted, and another notification when it&apos;s
+              reviewed by our team.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
