@@ -5,6 +5,9 @@ import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { SESSION_TTL_HOURS, JWT_VERSION } from "./config";
 
+const DUMMY_HASH =
+  "$2b$10$0bDP36Jr857rNn3xVdbpvePOhU0JdWbQ1wSrdc2xvPt8UnoeE/Nae";
+
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
@@ -33,17 +36,15 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
-        if (!user) {
-          throw new Error("No user found");
-        }
-
+        // Always run a bcrypt compare and return one generic error, so neither
+        // message nor timing reveals whether the account exists.
         const isValid = await bcrypt.compare(
           credentials.password,
-          user.password
+          user?.password ?? DUMMY_HASH
         );
 
-        if (!isValid) {
-          throw new Error("Invalid password");
+        if (!user || !isValid) {
+          throw new Error("Invalid email or password");
         }
 
         // Prevent PENDING users from authenticating

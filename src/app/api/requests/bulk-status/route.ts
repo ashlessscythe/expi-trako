@@ -21,7 +21,20 @@ export async function PUT(request: Request) {
     if (user.role === "PENDING") {
       return new NextResponse("Your account is pending approval", { status: 403 });
     }
+    if (!["ADMIN", "WAREHOUSE", "CUSTOMER_SERVICE"].includes(user.role)) {
+      return new NextResponse("Forbidden", { status: 403 });
+    }
     const { requestIds, status, sendEmail = false } = await request.json();
+
+    if (
+      !Array.isArray(requestIds) ||
+      requestIds.length === 0 ||
+      requestIds.length > 500 ||
+      !requestIds.every((id) => typeof id === "string") ||
+      !Object.values(RequestStatus).includes(status)
+    ) {
+      return new NextResponse("Invalid request data", { status: 400 });
+    }
 
     // Verify user has permission to update these requests
     if (user.role !== "ADMIN" && user.site) {

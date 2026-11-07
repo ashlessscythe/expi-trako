@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 
+const ALLOWED_KEYS = ["sendCompletionEmails", "sendNewUserEmails"];
+
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -43,7 +45,10 @@ export async function POST(req: Request) {
 
     const { key, value } = await req.json();
 
-    if (!key || value === undefined) {
+    if (
+      !ALLOWED_KEYS.includes(key) ||
+      (value !== "true" && value !== "false")
+    ) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }

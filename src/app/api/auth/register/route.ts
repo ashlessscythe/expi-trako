@@ -19,6 +19,20 @@ export async function POST(req: Request) {
       );
     }
 
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+      password.length < 8 ||
+      password.length > 128 ||
+      (name !== undefined && (typeof name !== "string" || name.length > 200))
+    ) {
+      return NextResponse.json(
+        { error: "Invalid input. Password must be 8-128 characters." },
+        { status: 400 }
+      );
+    }
+
     // Verify Turnstile token
     if (!turnstileToken) {
       return NextResponse.json(
