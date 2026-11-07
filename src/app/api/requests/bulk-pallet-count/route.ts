@@ -61,6 +61,39 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    const entries = Object.entries(palletCounts);
+    if (
+      entries.length === 0 ||
+      entries.length > 500 ||
+      !entries.every(
+        ([, c]) => typeof c === "number" && Number.isInteger(c) && c >= 0
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Invalid pallet counts data" },
+        { status: 400 }
+      );
+    }
+
+    // Site scoping: non-admins may only touch requests from their own site
+    if (!isAdmin(authUser)) {
+      const sessionSiteId = user.site?.id;
+      const found = await prisma.mustGoRequest.findMany({
+        where: { id: { in: entries.map(([id]) => id) } },
+        select: { siteId: true },
+      });
+      if (
+        found.some(
+          (r) => r.siteId !== null && (!sessionSiteId || r.siteId !== sessionSiteId)
+        )
+      ) {
+        return NextResponse.json(
+          { error: "You can only update requests from your site" },
+          { status: 403 }
+        );
+      }
+    }
+
     try {
       // Use a transaction to ensure all updates succeed or none do
       // First update all pallet counts in a transaction
